@@ -180,7 +180,7 @@ elif st.session_state["active_section"] == "Connecties":
             fincol1, fincol2 = st.columns(2)
             fincol1.image("images/mmf-logo.png")
             fincol2.subheader("MyMinFin")
-            fincol2.markdown("""Naam: FIDUCIAIRE TIMMERMANS 
+            fincol2.markdown("""Naam: FIDUCIAIRE ABC 
                                 support@fintrax.io""")
             verbindmy = st.button("Connecteer MyMinFin", use_container_width=True)
             if verbindmy:
