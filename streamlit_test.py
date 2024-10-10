@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import pickle
- from db_client import get_query_embeddings, get_cloud_client
+from db_client import get_query_embeddings, get_cloud_client
 from openai import OpenAI
 import time
 
@@ -9,7 +9,6 @@ import time
 st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png")
 
 # Load environment variables
-load_dotenv()
 
 # Set up OpenAI client
 OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
