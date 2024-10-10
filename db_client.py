@@ -4,9 +4,10 @@ from openai import OpenAI
 from pymilvus import MilvusClient
 from tqdm import tqdm
 import json
+import streamlit as st
 
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -26,8 +27,8 @@ def emb_text_d756(text):
 
 
 def get_cloud_client():
-    CLUSTER_ENDPOINT = "https://in03-6a1eca08d722e4c.serverless.gcp-us-west1.cloud.zilliz.com"
-    TOKEN = os.getenv('ZILLIS_API_KEY') 
+    CLUSTER_ENDPOINT = st.secrets['CLUSTER_ENDPOINT']
+    TOKEN = st.secrets['ZILLIS_API_KEY']
 
     client = MilvusClient(
         uri=CLUSTER_ENDPOINT,

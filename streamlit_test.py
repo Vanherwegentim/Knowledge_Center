@@ -1,8 +1,7 @@
 import streamlit as st
 import os
 import pickle
-from dotenv import load_dotenv
-from db_client import get_query_embeddings, get_cloud_client
+ from db_client import get_query_embeddings, get_cloud_client
 from openai import OpenAI
 import time
 
@@ -13,7 +12,7 @@ st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_ic
 load_dotenv()
 
 # Set up OpenAI client
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
 COLLECTION_NAME = "openai_vectors"  # Milvus collection name
 client = OpenAI(api_key=OPENAI_API_KEY)
 milvus_client = get_cloud_client()
