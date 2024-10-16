@@ -54,7 +54,7 @@ db = firestore.Client.from_service_account_info(firestore_cred)
 def popup():
     if "user_id" not in st.session_state:
         st.toast("Vul aub je bedrijfsnaam in")
-streamlit_analytics2.start_tracking(unsafe_password="gijsfintrax")
+streamlit_analytics2.start_tracking()
 # Display two buttons stacked vertically
 with st.sidebar.container(border=True):
     sidecol1, sidecol2, sidecode3 = st.columns(3)
@@ -249,7 +249,7 @@ elif st.session_state["active_section"] == "Rapporten":
         st.success("Uitgevoerd!")
 
 if st.secrets["PROD"] == "False" and "user_id" in st.session_state:
-    streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.user_id}.json")
+    streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.user_id}.json", unsafe_password=st.secrets["ANALYTICS_PWD"])
     doc_ref = db.collection('users').document(str(st.session_state.user_id))
     analytics_data = pd.read_json(f"analytics/{st.session_state.user_id}.json")
     doc_ref.set(analytics_data.to_dict())
