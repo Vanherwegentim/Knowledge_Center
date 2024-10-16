@@ -54,7 +54,7 @@ db = firestore.Client.from_service_account_info(firestore_cred)
 def popup():
     if "user_id" not in st.session_state:
         st.toast("Vul aub je bedrijfsnaam in")
-streamlit_analytics2.start_tracking()
+streamlit_analytics2.start_tracking(unsafe_password="gijsfintrax")
 # Display two buttons stacked vertically
 with st.sidebar.container(border=True):
     sidecol1, sidecol2, sidecode3 = st.columns(3)
