@@ -25,7 +25,7 @@ def emb_text_d756(text):
         .embedding
     )
 
-
+@st.cache_resource
 def get_cloud_client():
     CLUSTER_ENDPOINT = st.secrets['CLUSTER_ENDPOINT']
     TOKEN = st.secrets['ZILLIS_API_KEY']
@@ -36,10 +36,12 @@ def get_cloud_client():
     )
     return client
 
+@st.cache_resource
 def get_db_client():
     milvus_client = MilvusClient(uri="http://localhost:19530")
     return milvus_client
 
+@st.cache_resource
 def create_new_db_client(collection_name):
     milvus_client = MilvusClient(uri="http://localhost:19530")
 

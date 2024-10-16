@@ -1,3 +1,4 @@
 openai
 pymilvus
-
+streamlit-analytics2
+google-cloud-firestore

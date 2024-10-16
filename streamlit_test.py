@@ -4,7 +4,10 @@ import pickle
 from db_client import get_query_embeddings, get_cloud_client
 from openai import OpenAI
 import time
-
+import streamlit_analytics2
+from google.cloud import firestore
+import json
+import pandas as pd
 
 st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png")
 
@@ -29,18 +32,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# st.markdown(
-#     """
-#     <style>
-#     div.stButton > button {
-#         text-align: left;  /* Align the text to the left */
-#         width: 100%;  /* Optional: Make the button full width */
-#     }
-#     </style>
-#     """,
-#     unsafe_allow_html=True
-# )
-
 
 def create_llm_prompt(question, retrieved_chunks): 
     # Combine the user's query and the retrieved document chunks into a single prompt
@@ -55,38 +46,65 @@ def create_llm_prompt(question, retrieved_chunks):
 col1, col2, col3 = st.sidebar.columns([1,6,1])
 col2.image("images/thumbnail-modified.png")
 
+firestore_string = st.secrets["FIRESTORE"]
+firestore_cred = json.loads(firestore_string)
+db = firestore.Client.from_service_account_info(firestore_cred)
 
+
+def popup():
+    if "user_id" not in st.session_state:
+        st.toast("Vul aub je bedrijfsnaam in")
+streamlit_analytics2.start_tracking()
 # Display two buttons stacked vertically
 with st.sidebar.container(border=True):
     sidecol1, sidecol2, sidecode3 = st.columns(3)
     sidecol2.title("Acties")
 
-    chatbot_button = st.button("Knowledge Center", use_container_width=True)
-    upload_button = st.button("Upload Files", use_container_width=True)
-    connecties = st.button("Connecties", use_container_width=True)
-    voorkeuren = st.button("Voorkeuren", use_container_width=True)
-    rapporten = st.button("Rapporten", use_container_width=True)
+    chatbot_button = st.button("Knowledge Center", use_container_width=True,on_click=popup)
+    upload_button = st.button("Upload Files", use_container_width=True,on_click=popup)
+    connecties = st.button("Connecties", use_container_width=True,on_click=popup)
+    voorkeuren = st.button("Voorkeuren", use_container_width=True,on_click=popup)
+    rapporten = st.button("Rapporten", use_container_width=True, on_click=popup)
 
 
 # Maintain the user's selection between the buttons
+if "user_id" not in st.session_state:
+    with st.form("username_form"):
+        username = st.text_input("Bedrijfsnaam", placeholder="Geef hier uw geaffilieerde bedrijfsnaam in")
+        
+        # Form submission button
+        submit_button = st.form_submit_button("Submit")
+
+        # Check if the form is submitted
+        if submit_button:
+            if username:
+                # Set the username as user_id in session state
+                st.session_state['user_id'] = username
+                st.session_state["active_section"] = "Chatbot"
+                st.success(f"Username '{username}' has been set as user_id.")
+
+                st.rerun()
+                
+                
+            else:
+                st.error("Please enter a valid username.")
+
 if "active_section" not in st.session_state:
+    st.session_state["active_section"] = "Username"
+
+if chatbot_button and "user_id" in st.session_state:
     st.session_state["active_section"] = "Chatbot"
 
-# Switch to Chatbot if the button is clicked
-if chatbot_button:
-    st.session_state["active_section"] = "Chatbot"
-
-# Switch to Upload Files if the button is clicked
-if upload_button:
+if upload_button and "user_id" in st.session_state:
     st.session_state["active_section"] = "Upload Files"
 
-if connecties:
+if connecties and "user_id" in st.session_state:
     st.session_state["active_section"] = "Connecties"
 
-if voorkeuren:
+if voorkeuren and "user_id" in st.session_state:
     st.session_state["active_section"] = "Voorkeuren"
 
-if rapporten:
+if rapporten and "user_id" in st.session_state:
     st.session_state["active_section"] = "Rapporten"
 
 
@@ -99,10 +117,10 @@ if st.session_state["active_section"] == "Chatbot":
         st.session_state["openai_model"] = "gpt-4o"
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role":"system", "content":"""Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context.
+        st.session_state.messages = [{"role":"system", "content":"""Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
                                                                     BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
                                                                     BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
-                                                                    Als de context codes of vaken bevatten, moet de focus op de codes en vakken liggen.
+                                                                    Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
                                                                     Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
                                                                     Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
                                                                     Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
@@ -130,7 +148,7 @@ if st.session_state["active_section"] == "Chatbot":
                 model=st.session_state["openai_model"],
                 messages=[
                     {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
+                    for m in st.session_state.messages[-5:]
                 ],
                 stream=True,
             )
@@ -229,3 +247,11 @@ elif st.session_state["active_section"] == "Rapporten":
     if st.button('Voer Uit'):
         time.sleep(3)
         st.success("Uitgevoerd!")
+
+if st.secrets["PROD"] == "False" and "user_id" in st.session_state:
+    streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.user_id}.json")
+    doc_ref = db.collection('users').document(str(st.session_state.user_id))
+    analytics_data = pd.read_json(f"analytics/{st.session_state.user_id}.json")
+    doc_ref.set(analytics_data.to_dict())
+else:
+    streamlit_analytics2.stop_tracking()
