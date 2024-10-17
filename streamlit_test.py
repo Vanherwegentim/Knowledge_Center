@@ -67,8 +67,8 @@ with st.sidebar.container(border=True):
     chatbot_button = st.button("Knowledge Center", use_container_width=True,on_click=popup)
     upload_button = st.button("Upload Files", use_container_width=True,on_click=popup)
     connecties = st.button("Connecties", use_container_width=True,on_click=popup)
-    voorkeuren = st.button("Voorkeuren", use_container_width=True,on_click=popup)
-    rapporten = st.button("Rapporten", use_container_width=True, on_click=popup)
+    # voorkeuren = st.button("Voorkeuren", use_container_width=True,on_click=popup)
+    # rapporten = st.button("Rapporten", use_container_width=True, on_click=popup)
 
 
 # Maintain the user's selection between the buttons
@@ -110,11 +110,11 @@ if upload_button and "user_id" in st.session_state:
 if connecties and "user_id" in st.session_state:
     st.session_state["active_section"] = "Connecties"
 
-if voorkeuren and "user_id" in st.session_state:
-    st.session_state["active_section"] = "Voorkeuren"
+# if voorkeuren and "user_id" in st.session_state:
+#     st.session_state["active_section"] = "Voorkeuren"
 
-if rapporten and "user_id" in st.session_state:
-    st.session_state["active_section"] = "Rapporten"
+# if rapporten and "user_id" in st.session_state:
+#     st.session_state["active_section"] = "Rapporten"
 
 
 # If Chatbot is selected
@@ -167,26 +167,28 @@ if st.session_state["active_section"] == "Chatbot":
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Upload Files":
     st.title("Upload Files")
+    st.markdown("Deze functie is nog niet beschikbaar")
+    # uploaded_file = st.file_uploader("Choose a file", type=["txt", "pdf", "docx", "csv"])
     
-    uploaded_file = st.file_uploader("Choose a file", type=["txt", "pdf", "docx", "csv"])
-    
-    if uploaded_file is not None:
-        # Display basic information about the uploaded file
-        st.write(f"Uploaded file: {uploaded_file.name}")
+    # if uploaded_file is not None:
+    #     # Display basic information about the uploaded file
+    #     st.write(f"Uploaded file: {uploaded_file.name}")
         
-        # Example: Reading text files and displaying the content
-        if uploaded_file.type == "text/plain":
-            content = uploaded_file.read().decode("utf-8")
-            st.text_area("File Content", content, height=300)
+    #     # Example: Reading text files and displaying the content
+    #     if uploaded_file.type == "text/plain":
+    #         content = uploaded_file.read().decode("utf-8")
+    #         st.text_area("File Content", content, height=300)
         
-        # Example for handling other file types (CSV, PDF, etc.) can be added here
-        file_type = uploaded_file.type
-        st.write(f"File type: {file_type}")
+    #     # Example for handling other file types (CSV, PDF, etc.) can be added here
+    #     file_type = uploaded_file.type
+    #     st.write(f"File type: {file_type}")
 
 
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Connecties":
     st.title("Connecties")
+    st.markdown("Deze functie is nog niet beschikbaar, de connectie gaan nog geen data doorgeven")
+
     fin1,fin2,fin3 = st.columns(3)
     with fin1:
         with st.container(border=True):
