@@ -187,7 +187,7 @@ elif st.session_state["active_section"] == "Upload Files":
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Connecties":
     st.title("Connecties")
-    st.markdown("Deze functie is nog niet beschikbaar, de connectie gaan nog geen data")
+    st.markdown("Deze functie is nog niet beschikbaar, verbinden met de API gaat nog geen data doorgeven.")
 
     fin1,fin2,fin3 = st.columns(3)
     with fin1:
@@ -254,6 +254,8 @@ elif st.session_state["active_section"] == "Voorkeuren":
 
 elif st.session_state["active_section"] == "Rapporten":
     st.title("Rapporten")
+    st.markdown("Deze functie is nog niet beschikbaar")
+
     st.dataframe({"Vragen": st.session_state.questions}, width=800)
     if st.button('Voer Uit'):
         time.sleep(3)
