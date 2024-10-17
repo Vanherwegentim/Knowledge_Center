@@ -8,6 +8,8 @@ import streamlit_analytics2
 from google.cloud import firestore
 import json
 import pandas as pd
+import re
+
 
 st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png")
 
@@ -32,6 +34,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+
 
 def create_llm_prompt(question, retrieved_chunks): 
     # Combine the user's query and the retrieved document chunks into a single prompt
@@ -53,7 +57,7 @@ db = firestore.Client.from_service_account_info(firestore_cred)
 
 def popup():
     if "user_id" not in st.session_state:
-        st.toast("Vul aub je bedrijfsnaam in")
+        st.toast("Vul aub een emailadres in.")
 streamlit_analytics2.start_tracking()
 # Display two buttons stacked vertically
 with st.sidebar.container(border=True):
@@ -69,25 +73,30 @@ with st.sidebar.container(border=True):
 
 # Maintain the user's selection between the buttons
 if "user_id" not in st.session_state:
+    st.title("Welkom bij het Knowledge Center!")
     with st.form("username_form"):
-        username = st.text_input("Bedrijfsnaam", placeholder="Geef hier uw geaffilieerde bedrijfsnaam in")
+        
+        username = st.text_input("Emailadres", placeholder="Geef hier uw emailadres in.")
         
         # Form submission button
-        submit_button = st.form_submit_button("Submit")
+        submit_button = st.form_submit_button("Log in")
 
         # Check if the form is submitted
         if submit_button:
-            if username:
-                # Set the username as user_id in session state
-                st.session_state['user_id'] = username
-                st.session_state["active_section"] = "Chatbot"
-                st.success(f"Username '{username}' has been set as user_id.")
+            if re.match(email_regex, username):
+                if username:
+                    # Set the username as user_id in session state
+                    st.session_state['user_id'] = username
+                    st.session_state["active_section"] = "Chatbot"
+                    st.success(f"Succesvol ingelogd")
 
-                st.rerun()
+                    st.rerun()
+                else:
+                    st.error("Ongeldig emailadres. Vul aub een geldig emailadres in.")
                 
                 
             else:
-                st.error("Please enter a valid username.")
+                st.error("Vul aub een emailadres in.")
 
 if "active_section" not in st.session_state:
     st.session_state["active_section"] = "Username"
