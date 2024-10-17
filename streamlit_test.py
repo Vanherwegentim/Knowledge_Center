@@ -76,7 +76,7 @@ if "user_id" not in st.session_state:
     st.title("Welkom bij het Knowledge Center!")
     with st.form("username_form"):
         
-        username = st.text_input("Emailadres", placeholder="Geef hier uw emailadres in.")
+        username = st.text_input("Geef hier uw emailadres in om de applicatie te kunnen gebruiken", placeholder="Emailadres")
         
         # Form submission button
         submit_button = st.form_submit_button("Log in")
