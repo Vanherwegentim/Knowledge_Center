@@ -261,6 +261,6 @@ if st.secrets["PROD"] == "False" and "user_id" in st.session_state:
     streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.user_id}.json", unsafe_password=st.secrets["ANALYTICS_PWD"])
     doc_ref = db.collection('users').document(str(st.session_state.user_id))
     analytics_data = pd.read_json(f"analytics/{st.session_state.user_id}.json")
-    doc_ref.set(analytics_data.to_dict())
+    doc_ref.set(analytics_data.to_dict(), merge=True)
 else:
     streamlit_analytics2.stop_tracking()
