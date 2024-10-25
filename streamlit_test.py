@@ -58,8 +58,8 @@ db = firestore.Client.from_service_account_info(firestore_cred)
 def popup():
     if "user_id" not in st.session_state:
         st.toast("Vul aub een emailadres in.")
-streamlit_analytics2.start_tracking()
-# Display two buttons stacked vertically
+
+
 with st.sidebar.container(border=True):
     sidecol1, sidecol2, sidecode3 = st.columns(3)
     sidecol2.title("Acties")
@@ -98,6 +98,15 @@ if "user_id" not in st.session_state:
             else:
                 st.error("Vul aub een emailadres in.")
 
+if st.secrets["PROD"] == "False" and "user_id" in st.session_state:
+        if os.path.exists(f"analytics/{st.session_state.user_id}.json"):
+            streamlit_analytics2.start_tracking(load_from_json=f"analytics/{st.session_state.user_id}.json")
+        else:
+            streamlit_analytics2.main.reset_counts()
+            streamlit_analytics2.start_tracking()
+
+else:
+    streamlit_analytics2.start_tracking()
 if "active_section" not in st.session_state:
     st.session_state["active_section"] = "Username"
 
