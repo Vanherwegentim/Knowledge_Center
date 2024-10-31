@@ -2,7 +2,7 @@ from llama_index.core.tools import FunctionTool
 import json
 from django.utils import timezone
 import psycopg2
-
+import streamlit as st
 # conn = psycopg2.connect(
 #     host="localhost",
 #     database="silverfin_api",
@@ -11,11 +11,11 @@ import psycopg2
 # )
 # cursor = conn.cursor()
 conn = psycopg2.connect(
-    database="postgres",
-    host="pgvector-database.cluster-cbhoiiezfktg.eu-central-1.rds.amazonaws.com",
-    password="Pap+7a.NL63-?RRT>P59rd_[7vFF",
-    port="5432",
-    user="postgres",
+    database=st.secrets["RDS_NAME"],
+    host=st.secrets["RDS_HOST"],
+    password=st.secrets["RDS_PWD"],
+    port=st.secrets["RDS_PORT"],
+    user=st.secrets["RDS_USER"],
 )
 cursor = conn.cursor()
 
