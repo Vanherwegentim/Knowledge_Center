@@ -4,7 +4,11 @@ from django.utils import timezone
 from llama_index.core.tools import FunctionTool
 
 from enums.account_type import AccountType
-from utils import get_db_connection, get_period_ids
+from utils import (
+    get_acount_details_by_account_number,
+    get_db_connection,
+    get_period_ids,
+)
 
 #cursor = conn.cursor()
 
@@ -442,9 +446,9 @@ def bereken_VERLIES(company_id:int, date:str):
 
 bereken_VERLIES_tool = FunctionTool.from_defaults(fn=bereken_VERLIES)
 
-def bereken_eigen_vermogen(company_id:int, date:str):
+def bereken_balanstotaal(company_id:int, date:str):
         '''
-        Berekent het eigen vermogen van een bedrijf
+        Berekent het balanstotaal van een bedrijf
 
         Vereiste:
             - De company_id van het bedrijf
@@ -454,7 +458,7 @@ def bereken_eigen_vermogen(company_id:int, date:str):
             - Het eigen vermogen
         
         Details:
-        Eigen vermogen is het saldo van de bezittingen ('activa') en schulden ('passiva') van een onderneming of organisatie
+        Balanstotaal is het totaal van alle schulden en bezittingen, passiva en activa van een onderneming
         '''
         
         with get_db_connection() as conn:
@@ -475,8 +479,160 @@ def bereken_eigen_vermogen(company_id:int, date:str):
                 records = cursor.fetchall()
                 result = sum([float(record[0]) for record in records])
                 return result
+            
+def bereken_eigen_vermogen(company_id:int, date:str):
+    '''
+    Berekent het eigen vermogen van een bedrijf
 
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
 
+    Retourneert:
+        - Het eigen vermogen
+    
+    Details:
+    Het eigen vermogen is het saldo van de bezittingen ('activa') en schulden ('passiva') van een onderneming of organisatie
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            records = get_acount_details_by_account_number(cursor, company_id, period_id, [10,11,12,13,14,15])
+            result = sum([float(record[0]) for record in records])
+            return result
+
+def bereken_handelswerkkapitaal(company_id:int, date:str):
+    '''
+    Berekent het handelswerkkapitaal van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - Het handelswerkkapitaal
+    
+    Details:
+    Het handelswerkkapitaal omvat de balansposten die nodig zijn voor de bedrijfsvoering, zoals debiteuren en crediteuren (en ook voorraden)
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40, 41, 42, 43])
+            negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [44])
+            
+            result = sum([float(record[0]) for record in additives]) - sum([float(record[0]) for record in negatives])
+            return result
+        
+
+def bereken_bruto_marge(company_id:int, date:str):
+    '''
+    Berekent het bruto marge van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - Het bruto marge
+    
+    Details:
+    Het bruto marge is een verhouding die meet hoe winstgevend uw bedrijf is
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72])
+            negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [60])
+            
+            result = sum([float(record[0]) for record in additives]) - sum([float(record[0]) for record in negatives])
+            return result
+        
+
+def bereken_omzet(company_id:int, date:str):
+    '''
+    Berekent de omzet van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - Het omzet
+    
+    Details:
+    Het omzet is het totaalbedrag in een bepaalde periode van de verkopen door een bedrijf
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72])
+                        
+            result = sum([float(record[0]) for record in additives])
+            return result
+
+def bereken_handelsvorderingen(company_id:int, date:str):
+    '''
+    Berekent het handelsvorderingen van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - Het handelsvorderingen
+    
+    Details:
+    Het handelsvorderingen zijn een boekhoudkundige rekening met alle uitstaande geldclaims die betrekking hebben op verkopen waarvan de betaling nog niet geïnd is
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [40])
+            
+            result = sum([float(record[0]) for record in additives])
+            return result
+        
+def bereken_dso(company_id:int, date:str):
+    '''
+    Berekent de Days Sales Outstanding (DSO) van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - Het handelsvorderingen
+    
+    Details:
+    De DSO geeft aan hoeveel dagen het gemiddeld duurt voordat een factuur betaald is nadat jouw bedrijf een product of dienst heeft geleverd
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            
+    handelsvorderingen = bereken_handelsvorderingen(company_id, date)
+    omzet = bereken_omzet(company_id, date)
+    
+    return (handelsvorderingen / omzet) * 365
 def reconciliation_api_call(company_id:int, date:str):
     '''
         Deze tool geeft de reconiliation ids en namen terug van reconiliations van het gegeven bedrijf en datum.

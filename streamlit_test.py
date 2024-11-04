@@ -22,9 +22,14 @@ from llama_index.vector_stores.postgres import PGVectorStore
 from tools import (
     account_details,
     add,
+    bereken_balanstotaal,
+    bereken_bruto_marge,
+    bereken_dso,
     bereken_EBITDA,
     bereken_eigen_vermogen,
-    bereken_OMZET,
+    bereken_handelsvorderingen,
+    bereken_handelswerkkapitaal,
+    bereken_omzet,
     bereken_VERLIES,
     companies_ids_api_call,
     company_api_call,
@@ -118,16 +123,24 @@ def load_tools():
     period_tool = FunctionTool.from_defaults(fn=period_id_fetcher)
     account_tool = FunctionTool.from_defaults(fn=account_details)
     EBITDA_tool = FunctionTool.from_defaults(fn=bereken_EBITDA)
-    bereken_OMZET_tool = FunctionTool.from_defaults(fn=bereken_OMZET)
+    #bereken_OMZET_tool = FunctionTool.from_defaults(fn=bereken_OMZET)
     bereken_VERLIES_tool = FunctionTool.from_defaults(fn=bereken_VERLIES)
     reconciliation_tool = FunctionTool.from_defaults(fn=reconciliation_api_call)
     list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
     describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
     load_data_tool = FunctionTool.from_defaults(fn=load_data)
+    
+    balanstotaal_tool = FunctionTool.from_defaults(bereken_balanstotaal)
     eigen_vermogen_tool = FunctionTool.from_defaults(bereken_eigen_vermogen)
+    handelswerkkapitaal_tool = FunctionTool.from_defaults(bereken_handelswerkkapitaal)
+    bruto_marge_tool = FunctionTool.from_defaults(bereken_bruto_marge)
+    omzet_tool = FunctionTool.from_defaults(bereken_omzet)
+    handelsvorderingen_tool = FunctionTool.from_defaults(bereken_handelsvorderingen)
+    DSO_tool = FunctionTool.from_defaults(bereken_dso)
+    
     return [reconciliation_tool, budget_tool, tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, 
-            EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, bereken_OMZET_tool,
-            eigen_vermogen_tool]
+            EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, 
+            balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool]
 tools = load_tools()
 
 

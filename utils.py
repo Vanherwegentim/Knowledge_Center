@@ -39,3 +39,20 @@ def get_period_ids(cursor:cursor, company_id:int, date:str):
         return "Dit bedrijf heeft geen periode tijdens deze datum"
     
     return period_ids
+
+
+def get_acount_details_by_account_number(cursor: cursor, company_id: int, period_id: int, number_filter: list[int]):
+    
+    number_filter_str = '%|'.join([str(i) for i in number_filter])
+    number_filter_str += '%'
+    print(number_filter_str)
+    sql = f"""SELECT value
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '{number_filter_str}' AND
+                    period_id = {period_id};
+                """
+    cursor.execute(sql)
+    records = cursor.fetchall()
+    return records
