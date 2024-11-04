@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from uuid import uuid4
 
 import pandas as pd
 import streamlit as st
@@ -82,8 +83,6 @@ def create_db_connection():
     )
     return cloud_aws_vector_store
 cloud_aws_vector_store = create_db_connection()
-#Agent setup
-llm = OpenAI(model="gpt-4o", temperature=0)
 
 @st.cache_resource
 def vector_store_index(_cloud_aws_vector_store):
@@ -127,11 +126,24 @@ tools = load_tools()
 #     description="Load and search company IDs and names",
 #     index_cls=KeywordTableIndex,  # Index data for efficient searching
 # )
+
+system_prompt = '''
+Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
+BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
+BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
+Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
+Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
+Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
+Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
+Als er een berekening gevraagd wordt waarvoor er geen geschikte tool is, antwoord dan met "Sorry, dit kan ik nog niet berekenen."
+GEEF VOLDOENDE INFORMATIE!
+'''
+
 @st.cache_resource
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
     agent = OpenAIAgent.from_tools(
-        tools, verbose=True, llm=llm
+        tools, verbose=True, llm=llm, system_prompt=system_prompt
     )
     return agent
 
@@ -154,6 +166,8 @@ st.markdown(
 
 email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
+if st.session_state.get("UUID") is None:
+    st.session_state["UUID"] = uuid4().hex
 
 if st.session_state["authentication_status"] is None or st.session_state["authentication_status"] is False :
     st.title("Welkom bij het Knowledge Center!")
@@ -238,15 +252,7 @@ if st.session_state["active_section"] == "Chatbot":
         st.session_state["openai_model"] = "gpt-4o"
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role":"system", "content":"""Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
-                                                                    BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
-                                                                    BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
-                                                                    Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
-                                                                    Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
-                                                                    Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
-                                                                    Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
-                                                                    GEEF VOLDOENDE INFORMATIE!""" },
-                                        {"role": "assistant", "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!"}]
+        st.session_state.messages = [{"role": "assistant", "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!"}]
 
     for message in st.session_state.messages:
         if message["role"] != "system":
@@ -390,12 +396,13 @@ elif st.session_state["active_section"] == "Uitloggen":
 
 
 
-if st.secrets["PROD"] == "False" and "username" in st.session_state:
+if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" in st.session_state:
     streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.email}.json", unsafe_password=st.secrets["ANALYTICS_PWD"])
     doc_ref = db.collection('users').document(str(st.session_state.email))
     
     analytics_data = pd.read_json(f"analytics/{st.session_state.email}.json").to_dict()
-    analytics_data["chat"] = st.session_state.get("messages")
+    analytics_data["chat"] = {st.session_state.get('UUID'): st.session_state.get("messages")}
+    print(doc_ref.get(['chat']).to_dict())
     doc_ref.set(analytics_data, merge=True)
 else:
     streamlit_analytics2.stop_tracking()

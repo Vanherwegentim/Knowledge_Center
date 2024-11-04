@@ -1,8 +1,10 @@
-from llama_index.core.tools import FunctionTool
 import json
-from django.utils import timezone
+
 import psycopg2
 import streamlit as st
+from django.utils import timezone
+from llama_index.core.tools import FunctionTool
+
 # conn = psycopg2.connect(
 #     host="localhost",
 #     database="silverfin_api",
@@ -83,7 +85,7 @@ def companies_ids_api_call(keywords: list = None):
     Retourneert:
     - Een lijst met de ids van alle bedrijven voor de opgegeven pagina, gefilterd op zoekwoorden.
     """
-    companies = f"""
+    companies = """
         SELECT company_id, name
         FROM companies
     """
@@ -247,6 +249,7 @@ def period_id_fetcher(date:str, company_id:int):
 
 def account_details(company_id:int=0, period_id:int=0, account_id:int=0):
     """
+    Gebruik deze tool niet voor berekeningen.
     Geeft een lijst van account_details terug. Account_details hangen af van de company_id, period_id en de account_id. Een account_details kunnen dezelfde account_id hebben omdat ze dan verschillen van periode.
     
     Vereist:
