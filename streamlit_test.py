@@ -22,15 +22,22 @@ from llama_index.vector_stores.postgres import PGVectorStore
 from tools import (
     account_details,
     add,
+    bereken_afschrijvingen,
     bereken_balanstotaal,
     bereken_bruto_marge,
     bereken_dso,
+    bereken_EBIT,
     bereken_EBITDA,
+    bereken_EBITDA_marge,
     bereken_eigen_vermogen,
+    bereken_financiele_schulden,
     bereken_handelsvorderingen,
     bereken_handelswerkkapitaal,
+    bereken_liquide_middelen,
+    bereken_netto_financiele_schuld,
     bereken_omzet,
     bereken_VERLIES,
+    bereken_voorzieningen,
     companies_ids_api_call,
     company_api_call,
     describe_tables,
@@ -130,7 +137,6 @@ def load_tools():
     describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
     load_data_tool = FunctionTool.from_defaults(fn=load_data)
     
-    balanstotaal_tool = FunctionTool.from_defaults(bereken_balanstotaal)
     eigen_vermogen_tool = FunctionTool.from_defaults(bereken_eigen_vermogen)
     handelswerkkapitaal_tool = FunctionTool.from_defaults(bereken_handelswerkkapitaal)
     bruto_marge_tool = FunctionTool.from_defaults(bereken_bruto_marge)
@@ -138,9 +144,20 @@ def load_tools():
     handelsvorderingen_tool = FunctionTool.from_defaults(bereken_handelsvorderingen)
     DSO_tool = FunctionTool.from_defaults(bereken_dso)
     
+    balanstotaal_tool = FunctionTool.from_defaults(bereken_balanstotaal)
+    voorzieningen_tool= FunctionTool.from_defaults(bereken_voorzieningen)
+    financiele_schuld_tool= FunctionTool.from_defaults(bereken_financiele_schulden)
+    liquide_middelen_tool= FunctionTool.from_defaults(bereken_liquide_middelen)
+    EBITDA_marge_tool= FunctionTool.from_defaults(bereken_EBITDA_marge)
+    afschrijvingen_tool= FunctionTool.from_defaults(bereken_afschrijvingen)
+    EBIT_tool= FunctionTool.from_defaults(bereken_EBIT)
+    netto_financiele_schuld_tool= FunctionTool.from_defaults(bereken_netto_financiele_schuld)
+
+    
     return [reconciliation_tool, budget_tool, tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, 
             EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, 
-            balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool]
+            balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
+            voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool]
 tools = load_tools()
 
 

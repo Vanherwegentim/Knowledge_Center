@@ -245,7 +245,7 @@ def period_id_fetcher(date:str, company_id:int):
 
 def account_details(company_id:int=0, period_id:int=0, account_id:int=0):
     """
-    NIET voor berekeningen zoals EBITA, eigen vermogen, en dergerlijke.
+    NIET voor berekeningen zoals EBITDA, eigen vermogen, en dergerlijke.
     Geeft een lijst van account_details terug. Account_details hangen af van de company_id, period_id en de account_id. Een account_details kunnen dezelfde account_id hebben omdat ze dan verschillen van periode.
     
     Vereist:
@@ -503,6 +503,31 @@ def bereken_eigen_vermogen(company_id:int, date:str):
             records = get_acount_details_by_account_number(cursor, company_id, period_id, [10,11,12,13,14,15])
             result = sum([float(record[0]) for record in records])
             return result
+        
+def bereken_voorzieningen(company_id:int, date:str):
+    '''
+    Berekent de voorzieningen van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - de voorzieningen
+    
+    Details:
+    De voorzieningen 
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [16])
+            
+            result = sum([float(record[0]) for record in additives])
+            return result
 
 def bereken_handelswerkkapitaal(company_id:int, date:str):
     '''
@@ -524,16 +549,65 @@ def bereken_handelswerkkapitaal(company_id:int, date:str):
             if len(period_ids) == 0:
                 return "Dit bedrijf heeft geen periode tijdens deze datum"
             period_id = period_ids[0][0]
-            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40, 41, 42, 43])
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40])
             negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [44])
             
             result = sum([float(record[0]) for record in additives]) - sum([float(record[0]) for record in negatives])
             return result
         
+def bereken_financiele_schulden(company_id:int, date:str):
+    '''
+    Berekent de financiele schulden van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - de financiele schulden
+    
+    Details:
+    De financiele schulden zijn een onderverdeling bij de schulden op meer dan één jaar.
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [16, 17, 42, 43])
+            
+            result = sum([float(record[0]) for record in additives])
+            return result
+        
+def bereken_liquide_middelen(company_id:int, date:str):
+    '''
+    Berekent de financiele schulden van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - de financiele schulden
+    
+    Details:
+    De financiele schulden zijn een onderverdeling bij de schulden op meer dan één jaar.
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [50, 51, 52, 53 ,54, 55, 56, 57, 58])
+            
+            result = sum([float(record[0]) for record in additives])
+            return result
 
 def bereken_bruto_marge(company_id:int, date:str):
     '''
-    Berekent het bruto marge van een bedrijf
+    Berekent de bruto marge van een bedrijf
 
     Vereiste:
         - De company_id van het bedrijf
@@ -543,7 +617,7 @@ def bereken_bruto_marge(company_id:int, date:str):
         - Het bruto marge
     
     Details:
-    Het bruto marge is een verhouding die meet hoe winstgevend uw bedrijf is
+    De bruto marge is een verhouding die meet hoe winstgevend uw bedrijf is
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
@@ -551,12 +625,11 @@ def bereken_bruto_marge(company_id:int, date:str):
             if len(period_ids) == 0:
                 return "Dit bedrijf heeft geen periode tijdens deze datum"
             period_id = period_ids[0][0]
-            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72])
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72, 74])
             negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [60])
             
             result = sum([float(record[0]) for record in additives]) - sum([float(record[0]) for record in negatives])
             return result
-        
 
 def bereken_omzet(company_id:int, date:str):
     '''
@@ -578,10 +651,90 @@ def bereken_omzet(company_id:int, date:str):
             if len(period_ids) == 0:
                 return "Dit bedrijf heeft geen periode tijdens deze datum"
             period_id = period_ids[0][0]
-            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72])
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70])
                         
             result = sum([float(record[0]) for record in additives])
             return result
+
+def bereken_EBITDA_marge(company_id:int, date:str):
+    '''
+    Berekent de EBITDA marge van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - De EBITDA marge
+    
+    Details:
+    De EBITDA marge geeft aan hoeveel cash een bedrijf genereert voor elke euro omzet.
+    '''
+    ebitda = bereken_EBITDA(company_id, date)
+    omzet = bereken_omzet(company_id, date)
+    return ebitda / omzet
+
+def bereken_afschrijvingen(company_id:int, date:str):
+    '''
+    Berekent de afschrijvingen van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - De afschrijvingen
+    
+    Details:
+    De afschrijvingen
+    '''
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_ids = get_period_ids(cursor, company_id, date)
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            additives = get_acount_details_by_account_number(cursor, company_id, period_id, [63])
+                        
+            result = sum([float(record[0]) for record in additives])
+            return result
+    
+def bereken_EBIT(company_id:int, date:str):
+    '''
+    Berekent de EBITDA marge van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - De EBITDA marge
+    
+    Details:
+    De EBITDA marge geeft aan hoeveel cash een bedrijf genereert voor elke euro omzet.
+    '''
+    ebitda = bereken_EBITDA(company_id, date)
+    afschrijvingen = bereken_afschrijvingen(company_id, date)
+    return ebitda - afschrijvingen
+
+def bereken_netto_financiele_schuld(company_id:int, date:str):
+    '''
+    Berekent de netto financiele schuld van een bedrijf
+
+    Vereiste:
+        - De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+    Retourneert:
+        - De netto financiele schuld
+    
+    Details:
+    De netto financiele schuld geeft het vermogen van de groep weer om de schulden terug te betalen op basis van de kasstromen gegenereerd door de bedrijfsactiviteiten
+    '''
+    schulden = bereken_financiele_schulden(company_id, date)
+    liquide = bereken_liquide_middelen(company_id, date)
+    return schulden - liquide
+    
 
 def bereken_handelsvorderingen(company_id:int, date:str):
     '''
@@ -621,18 +774,12 @@ def bereken_dso(company_id:int, date:str):
     
     Details:
     De DSO geeft aan hoeveel dagen het gemiddeld duurt voordat een factuur betaald is nadat jouw bedrijf een product of dienst heeft geleverd
-    '''
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
-            
+    '''            
     handelsvorderingen = bereken_handelsvorderingen(company_id, date)
     omzet = bereken_omzet(company_id, date)
     
     return (handelsvorderingen / omzet) * 365
+
 def reconciliation_api_call(company_id:int, date:str):
     '''
         Deze tool geeft de reconiliation ids en namen terug van reconiliations van het gegeven bedrijf en datum.
