@@ -1,5 +1,18 @@
+import psycopg2
+import psycopg2._psycopg
+import streamlit as st
 from django.utils import timezone
 from psycopg2._psycopg import cursor
+
+
+def get_db_connection() -> psycopg2._psycopg.connection:
+    return psycopg2.connect(
+        database=st.secrets["RDS_NAME"],
+        host=st.secrets["RDS_HOST"],
+        password=st.secrets["RDS_PWD"],
+        port=st.secrets["RDS_PORT"],
+        user=st.secrets["RDS_USER"],
+    )
 
 
 def get_period_ids(cursor:cursor, company_id:int, date:str):

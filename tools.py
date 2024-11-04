@@ -1,28 +1,12 @@
 import json
 
-import psycopg2
-import streamlit as st
 from django.utils import timezone
 from llama_index.core.tools import FunctionTool
 
 from enums.account_type import AccountType
-from utils import get_period_ids
+from utils import get_db_connection, get_period_ids
 
-# conn = psycopg2.connect(
-#     host="localhost",
-#     database="silverfin_api",
-#     user="postgres",
-#     password="t"
-# )
-# cursor = conn.cursor()
-conn = psycopg2.connect(
-    database=st.secrets["RDS_NAME"],
-    host=st.secrets["RDS_HOST"],
-    password=st.secrets["RDS_PWD"],
-    port=st.secrets["RDS_PORT"],
-    user=st.secrets["RDS_USER"],
-)
-cursor = conn.cursor()
+#cursor = conn.cursor()
 
 def multiply(a: float, b: float) -> float:
     """Multiply two numbers and returns the product"""
@@ -92,8 +76,10 @@ def companies_ids_api_call(keywords: list = None):
         SELECT company_id, name
         FROM companies
     """
-    cursor.execute(companies)
-    result = cursor.fetchall()
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(companies)
+            result = cursor.fetchall()
 
     # Filter results based on keywords
     if keywords:
@@ -233,8 +219,11 @@ def period_id_fetcher(date:str, company_id:int):
             )
         );
     """
-    cursor.execute(period_ids)
-    period_ids = cursor.fetchall()
+    
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(period_ids)
+            period_ids = cursor.fetchall()
     if len(period_ids) == 0:
         return "Dit bedrijf heeft geen periode tijdens deze datum"
     return period_ids
@@ -266,32 +255,34 @@ def account_details(company_id:int=0, period_id:int=0, account_id:int=0):
     Details:
         - Value is de waarde van de account. Als er dus gevraagd wordt achter winst of verlies gaat dit belangrijk zijn.
     """
-    if company_id!=0:
-        sql = f"""SELECT *
-            FROM account_details
-            WHERE account_details.company_id = {company_id}"""
-        cursor.execute(sql)
-        record = cursor.fetchall()
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            if company_id!=0:
+                sql = f"""SELECT *
+                    FROM account_details
+                    WHERE account_details.company_id = {company_id}"""
+                cursor.execute(sql)
+                record = cursor.fetchall()
 
-        return record
-    
-    elif period_id!=0:
-        sql = f"""SELECT *
-            FROM account_details
-            WHERE account_details.period_id = {period_id}"""
-        cursor.execute(sql)
-        record = cursor.fetchall()
+                return record
+            
+            elif period_id!=0:
+                sql = f"""SELECT *
+                    FROM account_details
+                    WHERE account_details.period_id = {period_id}"""
+                cursor.execute(sql)
+                record = cursor.fetchall()
 
-        return record
-    
-    elif account_id!=0:
-        sql = f"""SELECT *
-            FROM account_details
-            WHERE account_details.account_id = {account_id}"""
-        cursor.execute(sql)
-        record = cursor.fetchall()
+                return record
+            
+            elif account_id!=0:
+                sql = f"""SELECT *
+                    FROM account_details
+                    WHERE account_details.account_id = {account_id}"""
+                cursor.execute(sql)
+                record = cursor.fetchall()
 
-        return record
+                return record
 
 def bereken_EBITDA(company_id:int, date:str):
         '''
@@ -325,23 +316,25 @@ def bereken_EBITDA(company_id:int, date:str):
                 )
             );
         """
-        cursor.execute(period_ids)
-        period_ids = cursor.fetchall()
-        if len(period_ids) == 0:
-            return "Dit bedrijf heeft geen periode tijdens deze datum"
-        period_id = period_ids[0][0]
-        sql = f"""SELECT *
-            FROM account_details
-            WHERE 
-                company_id = {company_id} AND
-                account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%' AND
-                period_id = {period_id};
-            """
-        cursor.execute(sql)
-        records = cursor.fetchall()
-        gain = sum([float(record[10]) for record in records])
-        result = gain * -1
-        return result
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(period_ids)
+                period_ids = cursor.fetchall()
+                if len(period_ids) == 0:
+                    return "Dit bedrijf heeft geen periode tijdens deze datum"
+                period_id = period_ids[0][0]
+                sql = f"""SELECT *
+                    FROM account_details
+                    WHERE 
+                        company_id = {company_id} AND
+                        account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%' AND
+                        period_id = {period_id};
+                    """
+                cursor.execute(sql)
+                records = cursor.fetchall()
+                gain = sum([float(record[10]) for record in records])
+                result = gain * -1
+                return result
 
 def bereken_OMZET(company_id:int, date:str):
     '''
@@ -374,23 +367,27 @@ def bereken_OMZET(company_id:int, date:str):
             )
         );
     """
-    cursor.execute(period_ids)
-    period_ids = cursor.fetchall()
-    if len(period_ids) == 0:
-        return "Dit bedrijf heeft geen periode tijdens deze datum"
-    period_id = period_ids[0][0]
-    sql = f"""SELECT *
-        FROM account_details
-        WHERE 
-            company_id = {company_id} AND
-            account_number SIMILAR TO '70%' AND
-            period_id = {period_id};
-        """
-    cursor.execute(sql)
-    records = cursor.fetchall()
-    gain = sum([float(record[10]) for record in records])
-    result = gain * -1
-    return result
+    
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(period_ids)
+            period_ids = cursor.fetchall()
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            sql = f"""SELECT *
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '70%' AND
+                    period_id = {period_id};
+                """
+            cursor.execute(sql)
+            records = cursor.fetchall()
+            gain = sum([float(record[10]) for record in records])
+            result = gain * -1
+            return result
+        
 bereken_OMZET_tool = FunctionTool.from_defaults(fn=bereken_OMZET)
 
 def bereken_VERLIES(company_id:int, date:str):
@@ -423,23 +420,26 @@ def bereken_VERLIES(company_id:int, date:str):
             )
         );
     """
-    cursor.execute(period_ids)
-    period_ids = cursor.fetchall()
-    if len(period_ids) == 0:
-        return "Dit bedrijf heeft geen periode tijdens deze datum"
-    period_id = period_ids[0][0]
-    sql = f"""SELECT *
-        FROM account_details
-        WHERE 
-            company_id = {company_id} AND
-            account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%%' AND
-            period_id = {period_id};
-        """
-    cursor.execute(sql)
-    records = cursor.fetchall()
-    gain = sum([float(record[10]) for record in records])
-    result = gain * -1
-    return result
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(period_ids)
+            period_ids = cursor.fetchall()
+            if len(period_ids) == 0:
+                return "Dit bedrijf heeft geen periode tijdens deze datum"
+            period_id = period_ids[0][0]
+            sql = f"""SELECT *
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%%' AND
+                    period_id = {period_id};
+                """
+            cursor.execute(sql)
+            records = cursor.fetchall()
+            gain = sum([float(record[10]) for record in records])
+            result = gain * -1
+            return result
+
 bereken_VERLIES_tool = FunctionTool.from_defaults(fn=bereken_VERLIES)
 
 def bereken_eigen_vermogen(company_id:int, date:str):
@@ -456,22 +456,25 @@ def bereken_eigen_vermogen(company_id:int, date:str):
         Details:
         Eigen vermogen is het saldo van de bezittingen ('activa') en schulden ('passiva') van een onderneming of organisatie
         '''
-        period_ids = get_period_ids(cursor, company_id, date)
         
-        if len(period_ids) == 0:
-            return "Dit bedrijf heeft geen periode tijdens deze datum"
-        period_id = period_ids[0][0]
-        sql = f"""SELECT value
-            FROM account_details
-            WHERE 
-                company_id = {company_id} AND
-                account_type = '{AccountType.ASSET.value}' AND
-                period_id = {period_id};
-            """
-        cursor.execute(sql)
-        records = cursor.fetchall()
-        result = sum([float(record[0]) for record in records])
-        return result
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                period_ids = get_period_ids(cursor, company_id, date)
+                
+                if len(period_ids) == 0:
+                    return "Dit bedrijf heeft geen periode tijdens deze datum"
+                period_id = period_ids[0][0]
+                sql = f"""SELECT value
+                    FROM account_details
+                    WHERE 
+                        company_id = {company_id} AND
+                        account_type = '{AccountType.ASSET}' AND
+                        period_id = {period_id};
+                    """
+                cursor.execute(sql)
+                records = cursor.fetchall()
+                result = sum([float(record[0]) for record in records])
+                return result
 
 
 def reconciliation_api_call(company_id:int, date:str):
@@ -504,37 +507,46 @@ def reconciliation_api_call(company_id:int, date:str):
                 )
             );
         """
-    cursor.execute(period_ids)
-    period_ids = cursor.fetchall()
-    period_id = period_ids[0][0]
-    print(period_id)
-    sql = f"""SELECT reconciliation_id, name
-        FROM reconciliations
-        WHERE 
-            company_id = {company_id} AND
-            period_id = {period_id};
-        """
-    cursor.execute(sql)
-    records = cursor.fetchall()
-    return records
+        
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(period_ids)
+            period_ids = cursor.fetchall()
+            period_id = period_ids[0][0]
+            print(period_id)
+            sql = f"""SELECT reconciliation_id, name
+                FROM reconciliations
+                WHERE 
+                    company_id = {company_id} AND
+                    period_id = {period_id};
+                """
+            cursor.execute(sql)
+            records = cursor.fetchall()
+            return records
 
 def list_tables():
     """This tool lists all the tables present in the schema."""
     sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
-    cursor.execute(sql)
-    result = cursor.fetchall()
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            result = cursor.fetchall()
     return result
 
 def describe_tables(table_name:str):
     """This tool describes the table given by the table name. It returns the column names and their types"""
     sql = f"SELECT column_name,data_type FROM information_schema.columns WHERE table_name = {table_name}"
-    cursor.execute(sql)
-    result = cursor.fetchall()
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            result = cursor.fetchall()
     return result
 
 def load_data(sql_query:str):
     """Use this tool as a last resort to create your own query. To correctly use this tool you will need the list_tables_tool and the describe_tables_tool"""
-    cursor.execute(sql_query)
-    result = cursor.fetchall()
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql_query)
+            result = cursor.fetchall()
     return result
 
