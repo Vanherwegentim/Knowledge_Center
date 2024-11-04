@@ -89,7 +89,19 @@ def vector_store_index(_cloud_aws_vector_store):
     index = VectorStoreIndex.from_vector_store(cloud_aws_vector_store,embed_model=OpenAIEmbedding(mode=OpenAIEmbeddingMode.SIMILARITY_MODE, model=OpenAIEmbeddingModelType.TEXT_EMBED_3_SMALL, dimensions=756))
     return index
 index = vector_store_index(cloud_aws_vector_store)
-query_engine = index.as_query_engine()
+
+llm = OpenAI(model="gpt-4o", temperature=0,
+             system_prompt="""Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
+BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
+BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
+Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
+Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
+Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
+Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
+GEEF VOLDOENDE INFORMATIE!
+             """)
+
+query_engine = index.as_query_engine(llm=llm)
 budget_tool = QueryEngineTool.from_defaults(
     query_engine,
     name="Financiele_informatie",
@@ -383,7 +395,6 @@ if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" i
     
     analytics_data = pd.read_json(f"analytics/{st.session_state.email}.json").to_dict()
     analytics_data["chat"] = {st.session_state.get('UUID'): st.session_state.get("messages")}
-    print(doc_ref.get(['chat']).to_dict())
     doc_ref.set(analytics_data, merge=True)
 else:
     streamlit_analytics2.stop_tracking()

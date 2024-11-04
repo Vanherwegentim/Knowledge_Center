@@ -249,7 +249,7 @@ def period_id_fetcher(date:str, company_id:int):
 
 def account_details(company_id:int=0, period_id:int=0, account_id:int=0):
     """
-    Gebruik deze tool niet voor berekeningen.
+    Gebruik deze tool niet voor berekeningen zoals EBITA, eigen vermogen, en dergerlijke.
     Geeft een lijst van account_details terug. Account_details hangen af van de company_id, period_id en de account_id. Een account_details kunnen dezelfde account_id hebben omdat ze dan verschillen van periode.
     
     Vereist:
