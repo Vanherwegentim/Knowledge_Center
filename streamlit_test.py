@@ -16,6 +16,7 @@ from llama_index.embeddings.openai import (
 )
 from llama_index.llms.openai import OpenAI
 from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.agent.openai import OpenAIAgent
 
 from db_client import get_cloud_client
 from tools import (
@@ -41,7 +42,6 @@ st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_ic
 
 #Load tools
 
-from llama_index.agent.openai import OpenAIAgent
 
 # Set up OpenAI client
 OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
@@ -118,15 +118,7 @@ def load_tools():
 tools = load_tools()
 
 
-# from llama_index.core.tools.tool_spec.load_and_search import LoadAndSearchToolSpec
-# company_ids_tool = FunctionTool.from_defaults(companies_ids_api_call)
 
-# companies_tool_spec = LoadAndSearchToolSpec.from_defaults(
-#     tool=company_ids_tool,  # Use the load function defined above
-#     name="Company_ID_Tool",
-#     description="Load and search company IDs and names",
-#     index_cls=KeywordTableIndex,  # Index data for efficient searching
-# )
 @st.cache_resource
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
@@ -211,7 +203,7 @@ else:
     streamlit_analytics2.start_tracking()
 if "active_section" not in st.session_state:
     st.session_state["active_section"] = "Username"
-if chatbot_button and "username" in st.session_state and st.session_state.username is not None:
+if chatbot_button and "username" in st.session_state and st.session_state.username is not None or st.session_state.active_section == "Username" and st.session_state.username is not None:
     st.session_state["active_section"] = "Chatbot"
 
 if upload_button and "username" in st.session_state and st.session_state.username is not None:
@@ -229,7 +221,7 @@ if rapporten and "username" in st.session_state and st.session_state.username is
 if uitloggen and "username" in st.session_state and st.session_state.username is not None:
     st.session_state["active_section"] = "Uitloggen"
 
-# If Chatbot is selected
+
 if st.session_state["active_section"] == "Chatbot":
     st.title("Knowledge Center")
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -238,15 +230,7 @@ if st.session_state["active_section"] == "Chatbot":
         st.session_state["openai_model"] = "gpt-4o"
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role":"system", "content":"""Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
-                                                                    BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
-                                                                    BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
-                                                                    Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
-                                                                    Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
-                                                                    Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
-                                                                    Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
-                                                                    GEEF VOLDOENDE INFORMATIE!""" },
-                                        {"role": "assistant", "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!"}]
+        st.session_state.messages = []
 
     for message in st.session_state.messages:
         if message["role"] != "system":
@@ -263,16 +247,7 @@ if st.session_state["active_section"] == "Chatbot":
             st.markdown(prompt)
 
         with st.chat_message("assistant", avatar="images/thumbnail.png"):
-            # mess = create_llm_prompt(prompt, get_query_embeddings(milvus_client, prompt, COLLECTION_NAME))
-            # st.session_state.messages.append({"role": "system", "content": mess})
-            # stream = client.chat.completions.create(
-            #     model=st.session_state["openai_model"],
-            #     messages=[
-            #         {"role": m["role"], "content": m["content"]}
-            #         for m in st.session_state.messages[-5:]
-            #     ],
-            #     stream=True,
-            # )
+           
             with st.spinner("Thinking..."):
                 mess = agent.stream_chat(prompt)
             response = st.write_stream(mess.response_gen)
