@@ -5,6 +5,9 @@ import streamlit as st
 from django.utils import timezone
 from llama_index.core.tools import FunctionTool
 
+from enums.account_type import AccountType
+from utils import get_period_ids
+
 # conn = psycopg2.connect(
 #     host="localhost",
 #     database="silverfin_api",
@@ -249,7 +252,7 @@ def period_id_fetcher(date:str, company_id:int):
 
 def account_details(company_id:int=0, period_id:int=0, account_id:int=0):
     """
-    Gebruik deze tool niet voor berekeningen zoals EBITA, eigen vermogen, en dergerlijke.
+    NIET voor berekeningen zoals EBITA, eigen vermogen, en dergerlijke.
     Geeft een lijst van account_details terug. Account_details hangen af van de company_id, period_id en de account_id. Een account_details kunnen dezelfde account_id hebben omdat ze dan verschillen van periode.
     
     Vereist:
@@ -438,6 +441,37 @@ def bereken_VERLIES(company_id:int, date:str):
     result = gain * -1
     return result
 bereken_VERLIES_tool = FunctionTool.from_defaults(fn=bereken_VERLIES)
+
+def bereken_eigen_vermogen(company_id:int, date:str):
+        '''
+        Berekent het eigen vermogen van een bedrijf
+
+        Vereiste:
+            - De company_id van het bedrijf
+            - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+
+        Retourneert:
+            - Het eigen vermogen
+        
+        Details:
+        Eigen vermogen is het saldo van de bezittingen ('activa') en schulden ('passiva') van een onderneming of organisatie
+        '''
+        period_ids = get_period_ids(cursor, company_id, date)
+        
+        if len(period_ids) == 0:
+            return "Dit bedrijf heeft geen periode tijdens deze datum"
+        period_id = period_ids[0][0]
+        sql = f"""SELECT value
+            FROM account_details
+            WHERE 
+                company_id = {company_id} AND
+                account_type = '{AccountType.ASSET.value}' AND
+                period_id = {period_id};
+            """
+        cursor.execute(sql)
+        records = cursor.fetchall()
+        result = sum([float(record[0]) for record in records])
+        return result
 
 
 def reconciliation_api_call(company_id:int, date:str):

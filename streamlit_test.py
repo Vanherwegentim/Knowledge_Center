@@ -24,6 +24,7 @@ from tools import (
     account_details,
     add,
     bereken_EBITDA,
+    bereken_eigen_vermogen,
     bereken_OMZET,
     bereken_VERLIES,
     companies_ids_api_call,
@@ -125,7 +126,10 @@ def load_tools():
     list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
     describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
     load_data_tool = FunctionTool.from_defaults(fn=load_data)
-    return [reconciliation_tool,budget_tool,tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, bereken_OMZET_tool]
+    eigen_vermogen_tool = FunctionTool.from_defaults(bereken_eigen_vermogen)
+    return [reconciliation_tool, budget_tool, tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, 
+            EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, bereken_OMZET_tool,
+            eigen_vermogen_tool]
 tools = load_tools()
 
 
@@ -384,10 +388,7 @@ elif st.session_state["active_section"] == "Uitloggen":
     elif st.session_state["authentication_status"] is None:
         st.warning('Please enter your username and password')
         st.session_state["active_section"] = "Username"
-    
-
-print(bereken_EBITDA("133963","2023-12-31"))
-      
+          
 
 
 if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" in st.session_state:
