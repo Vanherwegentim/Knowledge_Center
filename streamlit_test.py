@@ -386,7 +386,8 @@ elif st.session_state["active_section"] == "Uitloggen":
         st.session_state["active_section"] = "Username"
     
 
-
+print(bereken_EBITDA("133963","2023-12-31"))
+      
 
 
 if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" in st.session_state:
