@@ -132,10 +132,7 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-# hashed_passwords = stauth.Hasher(['abc','def'])
-# pog = hashed_passwords.hash_list()
 
-# st.markdown(pog)
 email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
 
