@@ -1,24 +1,42 @@
-import streamlit as st
-import os
-import pickle
-from db_client import get_query_embeddings, get_cloud_client
-from llama_index.llms.openai import OpenAI
-import time
-import streamlit_analytics2
-from google.cloud import firestore
 import json
+import os
+import time
+
 import pandas as pd
-import re
+import streamlit as st
+import streamlit_analytics2
 import streamlit_authenticator as stauth
-from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.embeddings.openai import OpenAIEmbedding, OpenAIEmbeddingMode, OpenAIEmbeddingModelType
-from llama_index.core import VectorStoreIndex, KeywordTableIndex
+from google.cloud import firestore
+from llama_index.core import VectorStoreIndex
+from llama_index.core.tools import FunctionTool, QueryEngineTool
+from llama_index.embeddings.openai import (
+    OpenAIEmbedding,
+    OpenAIEmbeddingMode,
+    OpenAIEmbeddingModelType,
+)
+from llama_index.llms.openai import OpenAI
 from llama_index.vector_stores.postgres import PGVectorStore
-from llama_index.core.tools import FunctionTool
-from llama_index.core.tools import QueryEngineTool
-from tools import (multiply,add,company_api_call,companies_ids_api_call,people_api_call,period_api_call,has_tax_decreased_api_call,period_id_fetcher,
-                            account_details,bereken_EBITDA,bereken_OMZET,bereken_VERLIES,reconciliation_api_call,list_tables,describe_tables,load_data
-                        ) 
+
+from db_client import get_cloud_client
+from tools import (
+    account_details,
+    add,
+    bereken_EBITDA,
+    bereken_OMZET,
+    bereken_VERLIES,
+    companies_ids_api_call,
+    company_api_call,
+    describe_tables,
+    has_tax_decreased_api_call,
+    list_tables,
+    load_data,
+    multiply,
+    people_api_call,
+    period_api_call,
+    period_id_fetcher,
+    reconciliation_api_call,
+)
+
 st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png")
 
 #Load tools
@@ -34,6 +52,7 @@ milvus_client = get_cloud_client()
 #Authentication
 import yaml
 from yaml.loader import SafeLoader
+
 with open('credentials.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 authenticator = stauth.Authenticate(
@@ -375,7 +394,8 @@ if st.secrets["PROD"] == "False" and "username" in st.session_state:
     streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.email}.json", unsafe_password=st.secrets["ANALYTICS_PWD"])
     doc_ref = db.collection('users').document(str(st.session_state.email))
     
-    analytics_data = pd.read_json(f"analytics/{st.session_state.email}.json")
-    doc_ref.set(analytics_data.to_dict(), merge=True)
+    analytics_data = pd.read_json(f"analytics/{st.session_state.email}.json").to_dict()
+    analytics_data["chat"] = st.session_state.get("messages")
+    doc_ref.set(analytics_data, merge=True)
 else:
     streamlit_analytics2.stop_tracking()
