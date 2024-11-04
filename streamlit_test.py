@@ -8,6 +8,7 @@ import streamlit as st
 import streamlit_analytics2
 import streamlit_authenticator as stauth
 from google.cloud import firestore
+from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import VectorStoreIndex
 from llama_index.core.tools import FunctionTool, QueryEngineTool
 from llama_index.embeddings.openai import (
@@ -42,7 +43,6 @@ st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_ic
 
 #Load tools
 
-from llama_index.agent.openai import OpenAIAgent
 
 # Set up OpenAI client
 OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
@@ -116,16 +116,6 @@ def load_tools():
     return [reconciliation_tool,budget_tool,tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, bereken_OMZET_tool]
 tools = load_tools()
 
-
-# from llama_index.core.tools.tool_spec.load_and_search import LoadAndSearchToolSpec
-# company_ids_tool = FunctionTool.from_defaults(companies_ids_api_call)
-
-# companies_tool_spec = LoadAndSearchToolSpec.from_defaults(
-#     tool=company_ids_tool,  # Use the load function defined above
-#     name="Company_ID_Tool",
-#     description="Load and search company IDs and names",
-#     index_cls=KeywordTableIndex,  # Index data for efficient searching
-# )
 
 system_prompt = '''
 Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
@@ -225,7 +215,7 @@ else:
     streamlit_analytics2.start_tracking()
 if "active_section" not in st.session_state:
     st.session_state["active_section"] = "Username"
-if chatbot_button and "username" in st.session_state and st.session_state.username is not None:
+if chatbot_button and "username" in st.session_state and st.session_state.username is not None or st.session_state.active_section == "Username" and st.session_state.username is not None:
     st.session_state["active_section"] = "Chatbot"
 
 if upload_button and "username" in st.session_state and st.session_state.username is not None:
@@ -243,7 +233,7 @@ if rapporten and "username" in st.session_state and st.session_state.username is
 if uitloggen and "username" in st.session_state and st.session_state.username is not None:
     st.session_state["active_section"] = "Uitloggen"
 
-# If Chatbot is selected
+
 if st.session_state["active_section"] == "Chatbot":
     st.title("Knowledge Center")
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -269,16 +259,7 @@ if st.session_state["active_section"] == "Chatbot":
             st.markdown(prompt)
 
         with st.chat_message("assistant", avatar="images/thumbnail.png"):
-            # mess = create_llm_prompt(prompt, get_query_embeddings(milvus_client, prompt, COLLECTION_NAME))
-            # st.session_state.messages.append({"role": "system", "content": mess})
-            # stream = client.chat.completions.create(
-            #     model=st.session_state["openai_model"],
-            #     messages=[
-            #         {"role": m["role"], "content": m["content"]}
-            #         for m in st.session_state.messages[-5:]
-            #     ],
-            #     stream=True,
-            # )
+           
             with st.spinner("Thinking..."):
                 mess = agent.stream_chat(prompt)
             response = st.write_stream(mess.response_gen)
