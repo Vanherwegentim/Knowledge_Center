@@ -19,7 +19,6 @@ from llama_index.embeddings.openai import (
 from llama_index.llms.openai import OpenAI
 from llama_index.vector_stores.postgres import PGVectorStore
 
-from db_client import get_cloud_client
 from tools import (
     account_details,
     add,
@@ -48,7 +47,6 @@ st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_ic
 OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
 COLLECTION_NAME = "openai_vectors"  # Milvus collection name
 client = OpenAI(api_key=OPENAI_API_KEY)
-milvus_client = get_cloud_client()
 
 #Authentication
 import yaml
@@ -385,8 +383,6 @@ elif st.session_state["active_section"] == "Uitloggen":
         st.warning('Please enter your username and password')
         st.session_state["active_section"] = "Username"
     
-
-print(bereken_EBITDA("133963","2023-12-31"))
       
 
 
