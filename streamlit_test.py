@@ -19,6 +19,7 @@ from llama_index.embeddings.openai import (
 from llama_index.llms.openai import OpenAI
 from llama_index.vector_stores.postgres import PGVectorStore
 
+from calculator.calculator import bereken
 from tools import (
     account_details,
     add,
@@ -152,12 +153,17 @@ def load_tools():
     afschrijvingen_tool= FunctionTool.from_defaults(bereken_afschrijvingen)
     EBIT_tool= FunctionTool.from_defaults(bereken_EBIT)
     netto_financiele_schuld_tool= FunctionTool.from_defaults(bereken_netto_financiele_schuld)
+    
+    bereken_tool = FunctionTool.from_defaults(bereken)
 
     
     return [reconciliation_tool, budget_tool, tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, 
-            EBITDA_tool, list_tables_tool, describe_tables_tool, load_data_tool, 
-            balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
-            voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool]
+            #EBITDA_tool, 
+            list_tables_tool, describe_tables_tool, load_data_tool, 
+            #balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
+            #voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
+            bereken_tool
+            ]
 tools = load_tools()
 
 
