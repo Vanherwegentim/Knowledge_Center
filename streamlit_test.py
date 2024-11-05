@@ -291,42 +291,47 @@ if st.session_state["active_section"] == "Chatbot":
     if "openai_model" not in st.session_state:
         st.session_state["openai_model"] = "gpt-4o"
 
+    # Initialize processing flag and message history in session state
+    if "processing" not in st.session_state:
+        st.session_state["processing"] = False
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "assistant", "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!"}]
 
-    for message in st.session_state.messages:
-        if message["role"] != "system":
-            if message["role"] == "assistant": 
-                with st.chat_message(message["role"], avatar="images/thumbnail.png"):
-                    st.markdown(message["content"])
-            else:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-    st.markdown("voor vraag")
-    try:
+    # Only allow input if not currently processing a response
+    if not st.session_state["processing"]:
         prompt = st.chat_input("Stel hier je vraag!")
-        time.sleep(0.1)  # Short delay for session state sync
-
-        st.markdown(prompt)
         if prompt:
-            st.markdown("na vraag")
+            # Set processing flag to True to indicate a response is being generated
+            st.session_state["processing"] = True
             st.session_state.messages.append({"role": "user", "content": prompt})
-            
 
+            # Display the user message
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            # Display assistant message container and stream response
             with st.chat_message("assistant", avatar="images/thumbnail.png"):
-            
                 with st.spinner("Thinking..."):
-
                     try:
+                        # Start the streaming response
                         mess = agent.stream_chat(prompt)
-                        response = st.write_stream(mess.response_gen)
+                        response = st.write_stream(mess.response_gen)  # Stream the response
                         st.session_state.messages.append({"role": "assistant", "content": response})
                     except Exception as e:
                         response = "Sorry, there was an error processing your request. Please try again later."
                         st.error("Error in agent response: " + str(e))
-    except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again later."
-                        st.error("Error in agent response: " + str(e))
+                    finally:
+                        # Clear the processing flag to allow new input after completion
+                        st.session_state["processing"] = False
+
+    # Display all messages from the conversation history
+    for message in st.session_state.messages:
+        if message["role"] == "assistant":
+            with st.chat_message("assistant", avatar="images/thumbnail.png"):
+                st.markdown(message["content"])
+        else:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
 
 
