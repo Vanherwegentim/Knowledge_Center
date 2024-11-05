@@ -302,17 +302,24 @@ if st.session_state["active_section"] == "Chatbot":
             else:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
-
+    st.markdown("Before chat input")
     if prompt := st.chat_input("Stel hier je vraag!"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant", avatar="images/thumbnail.png"):
+            st.markdown("after assistant message")
            
             with st.spinner("Thinking..."):
+                st.markdown("after thinking")
+
                 mess = agent.stream_chat(prompt)
+                st.markdown("after streaming chat response")
+
             response = st.write_stream(mess.response_gen)
+            st.markdown("after streaming response")
+
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 
