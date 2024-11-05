@@ -41,6 +41,7 @@ calculations = {
 def bereken(what:str, company_id:int, date:str):
         '''
         Maakt een specifieke berekening van een bedrijf voor een bepaalde periode
+        als je de company_id niet hebt maar wel de company naam, haal de id dan eerst uit de companies_ids_api_call tool. VRAAG NIET ACHTER DE ID.
         
 
         Vereiste:
