@@ -297,6 +297,14 @@ if st.session_state["active_section"] == "Chatbot":
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "assistant", "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!"}]
 
+    # Display all messages from the conversation history
+    for message in st.session_state.messages:
+        if message["role"] == "assistant":
+            with st.chat_message("assistant", avatar="images/thumbnail.png"):
+                st.markdown(message["content"])
+        else:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
     # Only allow input if not currently processing a response
     if not st.session_state["processing"]:
         prompt = st.chat_input("Stel hier je vraag!")
@@ -324,14 +332,7 @@ if st.session_state["active_section"] == "Chatbot":
                         # Clear the processing flag to allow new input after completion
                         st.session_state["processing"] = False
 
-    # Display all messages from the conversation history
-    for message in st.session_state.messages:
-        if message["role"] == "assistant":
-            with st.chat_message("assistant", avatar="images/thumbnail.png"):
-                st.markdown(message["content"])
-        else:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+
 
 
 
