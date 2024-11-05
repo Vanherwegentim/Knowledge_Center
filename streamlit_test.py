@@ -315,7 +315,6 @@ if st.session_state["active_section"] == "Chatbot":
             response = st.write_stream(mess.response_gen)
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-st.markdown(st.session_state.messages)
 
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Upload Files":
@@ -425,6 +424,7 @@ elif st.session_state["active_section"] == "Uitloggen":
         st.warning('Please enter your username and password')
         st.session_state["active_section"] = "Username"
           
+st.markdown(st.session_state.messages)
 
 
 if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" in st.session_state:
