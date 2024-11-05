@@ -322,9 +322,9 @@ if st.session_state["active_section"] == "Chatbot":
                     st.error("Error in agent response: " + str(e))
 
             response = st.write_stream(mess.response_gen)
+            st.session_state.messages.append({"role": "assistant", "content": response})
             st.markdown("after streaming response")
 
-        st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 # If Upload Files is selected
