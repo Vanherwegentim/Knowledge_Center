@@ -304,20 +304,20 @@ if st.session_state["active_section"] == "Chatbot":
                     st.markdown(message["content"])
     st.markdown("voor vraag")
     try:
-        if "user_prompt" not in st.session_state:
-            st.session_state["user_prompt"] = None
-
         prompt = st.chat_input("Stel hier je vraag!")
+        time.sleep(0.1)  # Short delay for session state sync
 
-        if prompt and prompt != st.session_state["user_prompt"]:
-            st.session_state["user_prompt"] = prompt  # Update state only if new input is detected
+        st.markdown(prompt)
+        if prompt:
+            st.markdown("na vraag")
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            # Process response
             with st.chat_message("assistant", avatar="images/thumbnail.png"):
+            
                 with st.spinner("Thinking..."):
+
                     try:
                         mess = agent.stream_chat(prompt)
                         response = st.write_stream(mess.response_gen)
@@ -325,7 +325,6 @@ if st.session_state["active_section"] == "Chatbot":
                     except Exception as e:
                         response = "Sorry, there was an error processing your request. Please try again later."
                         st.error("Error in agent response: " + str(e))
-
     except Exception as e:
                         response = "Sorry, there was an error processing your request. Please try again later."
                         st.error("Error in agent response: " + str(e))
