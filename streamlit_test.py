@@ -303,28 +303,32 @@ if st.session_state["active_section"] == "Chatbot":
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
     st.markdown("voor vraag")
-    if prompt := st.chat_input("Stel hier je vraag!"):
-        st.markdown("na vraag")
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    try:
+        if prompt := st.chat_input("Stel hier je vraag!"):
+            st.markdown("na vraag")
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-        with st.chat_message("assistant", avatar="images/thumbnail.png"):
-           
-            with st.spinner("Thinking..."):
+            with st.chat_message("assistant", avatar="images/thumbnail.png"):
+            
+                with st.spinner("Thinking..."):
 
-                try:
-                    mess = agent.stream_chat(prompt)
-                    st.markdown("agent")
-                    st.markdown(mess)
-                    response = st.write_stream(mess.response_gen)
-                    st.markdown("response")
-                    st.markdown(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+                    try:
+                        mess = agent.stream_chat(prompt)
+                        st.markdown("agent")
+                        st.markdown(mess)
+                        response = st.write_stream(mess.response_gen)
+                        st.markdown("response")
+                        st.markdown(response)
+                        st.session_state.messages.append({"role": "assistant", "content": response})
 
-                except Exception as e:
-                    response = "Sorry, there was an error processing your request. Please try again later."
-                    st.error("Error in agent response: " + str(e))
+                    except Exception as e:
+                        response = "Sorry, there was an error processing your request. Please try again later."
+                        st.error("Error in agent response: " + str(e))
+    except Exception as e:
+                        response = "Sorry, there was an error processing your request. Please try again later."
+                        st.error("Error in agent response: " + str(e))
 
 
 
