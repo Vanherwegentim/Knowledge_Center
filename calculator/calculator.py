@@ -46,7 +46,7 @@ def bereken(what:str, company_id:int, date:str):
         Vereiste:
             - what (str): Het soort berekening dat gemaakt moet worden. Map indien mogelijk naar een van volgende woorden (EBITDA, verlies, balanstotaal, eigen vermogenm voorzieningen, 
             handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
-            - De company_id van het bedrijf, als je deze niet hebt maar wel de company naam, haal de id dan eerst uit de companies_ids_api_call tool
+            - De company_id van het bedrijf, als je deze niet hebt maar wel de company naam, haal de id dan eerst uit de companies_ids_api_call tool. VRAAG NIET ACHTER DE ID.
             - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
 
         Retourneert:
