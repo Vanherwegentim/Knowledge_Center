@@ -314,8 +314,12 @@ if st.session_state["active_section"] == "Chatbot":
             with st.spinner("Thinking..."):
                 st.markdown("after thinking")
 
-                mess = agent.stream_chat(prompt)
-                st.markdown("after streaming chat response")
+                try:
+                    mess = agent.stream_chat(prompt)
+                    response = st.write_stream(mess.response_gen)
+                except Exception as e:
+                    response = "Sorry, there was an error processing your request. Please try again later."
+                    st.error("Error in agent response: " + str(e))
 
             response = st.write_stream(mess.response_gen)
             st.markdown("after streaming response")
