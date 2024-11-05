@@ -304,25 +304,26 @@ if st.session_state["active_section"] == "Chatbot":
                     st.markdown(message["content"])
     st.markdown("voor vraag")
     try:
+        if "user_prompt" not in st.session_state:
+            st.session_state["user_prompt"] = None
+
         prompt = st.chat_input("Stel hier je vraag!")
-        st.markdown(prompt)
-        if prompt:
-            st.markdown("na vraag")
+
+        if prompt and prompt != st.session_state["user_prompt"]:
+            st.session_state["user_prompt"] = prompt  # Update state only if new input is detected
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            with st.chat_message("assistant", avatar="images/thumbnail.png"):
-            
-                with st.spinner("Thinking..."):
+            # Process response
+            try:
+                mess = agent.stream_chat(prompt)
+                response = st.write_stream(mess.response_gen)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            except Exception as e:
+                response = "Sorry, there was an error processing your request. Please try again later."
+                st.error("Error in agent response: " + str(e))
 
-                    try:
-                        mess = agent.stream_chat(prompt)
-                        response = st.write_stream(mess.response_gen)
-                        st.session_state.messages.append({"role": "assistant", "content": response})
-                    except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again later."
-                        st.error("Error in agent response: " + str(e))
     except Exception as e:
                         response = "Sorry, there was an error processing your request. Please try again later."
                         st.error("Error in agent response: " + str(e))
