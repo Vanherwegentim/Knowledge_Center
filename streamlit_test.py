@@ -183,7 +183,7 @@ GEEF VOLDOENDE INFORMATIE!
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
     agent = OpenAIAgent.from_tools(
-        tools, verbose=True, llm=llm
+        tools, verbose=True, llm=llm, system_prompt=system_prompt
     )
     return agent
 
@@ -311,8 +311,7 @@ if st.session_state["active_section"] == "Chatbot":
         if prompt:
             st.markdown("na vraag")
             st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
+            
 
             with st.chat_message("assistant", avatar="images/thumbnail.png"):
             
