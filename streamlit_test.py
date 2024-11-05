@@ -436,7 +436,6 @@ elif st.session_state["active_section"] == "Uitloggen":
         st.warning('Please enter your username and password')
         st.session_state["active_section"] = "Username"
           
-st.markdown(st.session_state.messages)
 
 
 if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" in st.session_state:
