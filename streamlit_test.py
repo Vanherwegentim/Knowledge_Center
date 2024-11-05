@@ -302,11 +302,8 @@ if st.session_state["active_section"] == "Chatbot":
             else:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
-    st.markdown("voor vraag")
     try:
         prompt = st.chat_input("Stel hier je vraag!")
-
-        st.markdown(prompt)
         if prompt:
             st.markdown("na vraag")
             st.session_state.messages.append({"role": "user", "content": prompt})
@@ -314,7 +311,6 @@ if st.session_state["active_section"] == "Chatbot":
                 st.markdown(prompt)
 
             with st.chat_message("assistant", avatar="images/thumbnail.png"):
-            
                 with st.spinner("Thinking..."):
 
                     try:
