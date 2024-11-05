@@ -304,7 +304,9 @@ if st.session_state["active_section"] == "Chatbot":
                     st.markdown(message["content"])
     st.markdown("voor vraag")
     try:
-        if prompt := st.chat_input("Stel hier je vraag!"):
+        prompt = st.chat_input("Stel hier je vraag!")
+        st.markdown(prompt)
+        if prompt:
             st.markdown("na vraag")
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
