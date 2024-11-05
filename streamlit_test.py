@@ -183,7 +183,7 @@ GEEF VOLDOENDE INFORMATIE!
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
     agent = OpenAIAgent.from_tools(
-        tools, verbose=True, llm=llm, system_prompt=system_prompt
+        tools, verbose=True, llm=llm
     )
     return agent
 
