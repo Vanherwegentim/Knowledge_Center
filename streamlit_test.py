@@ -314,7 +314,7 @@ if st.session_state["active_section"] == "Chatbot":
                 mess = agent.stream_chat(prompt)
             response = st.write_stream(mess.response_gen)
         st.session_state.messages.append({"role": "assistant", "content": response})
-        print(st.session_state.messages)
+        st.markdown(st.session_state.messages)
 
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Upload Files":
