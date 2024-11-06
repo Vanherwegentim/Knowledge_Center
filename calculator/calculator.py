@@ -149,7 +149,28 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"
                         LIMIT {limit};
                         """
           case "eigen vermogen":
-                sql = "SIMILAR TO '16%'"
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '10%|11%|12%|13%|14%|15%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {order_by}
+                        LIMIT {limit};
+                        """
           case "voorziening":
                 sql = f"""WITH latest_period AS (
                             SELECT period_id, company_id,

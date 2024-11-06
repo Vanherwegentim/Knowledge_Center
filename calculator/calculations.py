@@ -110,7 +110,7 @@ def bereken_balanstotaal(company_id:int, date:str):
             - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
 
         Retourneert:
-            - Het eigen vermogen
+            - Het balanstotaal
         
         Details:
         Balanstotaal is het totaal van alle schulden en bezittingen, passiva en activa van een onderneming
