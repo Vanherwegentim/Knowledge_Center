@@ -228,7 +228,7 @@ if st.session_state["authentication_status"] is None or st.session_state["authen
 
 
 col1, col2, col3 = st.sidebar.columns([1,6,1])
-col2.image("images/vgd2.jpg")
+col2.image("images/vgd2.webp")
 
 firestore_string = st.secrets["FIRESTORE"]
 firestore_cred = json.loads(firestore_string)
