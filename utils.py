@@ -38,7 +38,7 @@ def get_period_ids(cursor:cursor, company_id:int, date:str):
     if len(period_ids) == 0:
         return "Dit bedrijf heeft geen periode tijdens deze datum"
     
-    return period_ids
+    return period_ids[0][0]
 
 
 def get_acount_details_by_account_number(cursor: cursor, company_id: int, period_id: int, number_filter: list[int]):

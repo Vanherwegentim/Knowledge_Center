@@ -23,30 +23,9 @@ def bereken_EBITDA(company_id:int, date:str):
         EBITDA, short for earnings before interest, taxes, depreciation, and amortization, is an alternate measure of profitability to net income. 
         It's used to assess a company's profitability and financial performance.
         '''
-        date = timezone.datetime.fromisoformat(date)
-        period_ids = f"""
-            SELECT period_id
-            FROM periods
-            WHERE company_id = {company_id}
-            AND (
-                end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year}
-                OR
-                end_date = (
-                    SELECT MAX(end_date)
-                    FROM periods AS p2
-                    WHERE p2.company_id = periods.company_id
-                    AND DATE_PART('year', p2.end_date) = DATE_PART('year', periods.end_date)
-                    AND DATE_PART('year', fiscal_year_end) = {date.year}
-                )
-            );
-        """
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute(period_ids)
-                period_ids = cursor.fetchall()
-                if len(period_ids) == 0:
-                    return "Dit bedrijf heeft geen periode tijdens deze datum"
-                period_id = period_ids[0][0]
+                period_id = get_period_ids(cursor, company_id, date)
                 sql = f"""SELECT *
                     FROM account_details
                     WHERE 
@@ -75,30 +54,10 @@ def bereken_OMZET(company_id:int, date:str):
     De omzet van uw bedrijf is het totale bedrag aan inkomsten uit de verkoop van producten en diensten in een bepaalde periode. Dit wordt ook wel de bruto-omzet genoemd.
     '''
     date = timezone.datetime.fromisoformat(date)
-    period_ids = f"""
-        SELECT period_id
-        FROM periods
-        WHERE company_id = {company_id}
-        AND (
-            end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year}
-            OR
-            end_date = (
-                SELECT MAX(end_date)
-                FROM periods AS p2
-                WHERE p2.company_id = periods.company_id
-                AND DATE_PART('year', p2.end_date) = DATE_PART('year', periods.end_date)
-                AND DATE_PART('year', fiscal_year_end) = {date.year}
-            )
-        );
-    """
     
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(period_ids)
-            period_ids = cursor.fetchall()
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             sql = f"""SELECT *
                 FROM account_details
                 WHERE 
@@ -125,35 +84,15 @@ def bereken_VERLIES(company_id:int, date:str):
     
     Details:
         Wanneer de totale inkomsten lager liggen als de totale uitgaven, dan spreekt men van verlies.    '''
-    date = timezone.datetime.fromisoformat(date)
-    period_ids = f"""
-        SELECT period_id
-        FROM periods
-        WHERE company_id = {company_id}
-        AND (
-            end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year}
-            OR
-            end_date = (
-                SELECT MAX(end_date)
-                FROM periods AS p2
-                WHERE p2.company_id = periods.company_id
-                AND DATE_PART('year', p2.end_date) = DATE_PART('year', periods.end_date)
-                AND DATE_PART('year', fiscal_year_end) = {date.year}
-            )
-        );
-    """
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(period_ids)
-            period_ids = cursor.fetchall()
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             sql = f"""SELECT *
                 FROM account_details
                 WHERE 
                     company_id = {company_id} AND
-                    account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%%' AND
+                    account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%' AND
                     period_id = {period_id};
                 """
             cursor.execute(sql)
@@ -179,11 +118,7 @@ def bereken_balanstotaal(company_id:int, date:str):
         
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                period_ids = get_period_ids(cursor, company_id, date)
-                
-                if len(period_ids) == 0:
-                    return "Dit bedrijf heeft geen periode tijdens deze datum"
-                period_id = period_ids[0][0]
+                period_id = get_period_ids(cursor,company_id,date)
                 sql = f"""SELECT value
                     FROM account_details
                     WHERE 
@@ -212,10 +147,7 @@ def bereken_eigen_vermogen(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             records = get_acount_details_by_account_number(cursor, company_id, period_id, [10,11,12,13,14,15])
             result = sum([float(record[0]) for record in records])
             return result
@@ -236,10 +168,7 @@ def bereken_voorzieningen(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [16])
             
             result = sum([float(record[0]) for record in additives])
@@ -261,10 +190,7 @@ def bereken_handelswerkkapitaal(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40])
             negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [44])
             
@@ -287,10 +213,7 @@ def bereken_financiele_schulden(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [16, 17, 42, 43])
             
             result = sum([float(record[0]) for record in additives])
@@ -312,10 +235,7 @@ def bereken_liquide_middelen(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [50, 51, 52, 53 ,54, 55, 56, 57, 58])
             
             result = sum([float(record[0]) for record in additives])
@@ -337,10 +257,7 @@ def bereken_bruto_marge(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72, 74])
             negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [60])
             
@@ -363,10 +280,7 @@ def bereken_omzet(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70])
                         
             result = sum([float(record[0]) for record in additives])
@@ -406,10 +320,7 @@ def bereken_afschrijvingen(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [63])
                         
             result = sum([float(record[0]) for record in additives])
@@ -468,10 +379,7 @@ def bereken_handelsvorderingen(company_id:int, date:str):
     '''
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            period_ids = get_period_ids(cursor, company_id, date)
-            if len(period_ids) == 0:
-                return "Dit bedrijf heeft geen periode tijdens deze datum"
-            period_id = period_ids[0][0]
+            period_id = get_period_ids(cursor,company_id,date)
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [40])
             
             result = sum([float(record[0]) for record in additives])

@@ -16,6 +16,9 @@ from .calculations import (
         bereken_VERLIES,
         bereken_voorzieningen,
 )
+from utils import get_db_connection
+
+from django.utils import timezone
 
 calculations = {
     'EBITDA': bereken_EBITDA,
@@ -24,7 +27,7 @@ calculations = {
     'balanstotaal': bereken_balanstotaal,
     'eigen vermogen': bereken_eigen_vermogen,
     'voorzieningen': bereken_voorzieningen,
-    'handelswerkkaptiaal': bereken_handelswerkkapitaal,
+    'handelswerkkapitaal': bereken_handelswerkkapitaal,
     'financiele schulden': bereken_financiele_schulden,
     'liquide middelen': bereken_liquide_middelen,
     'bruto marge': bereken_bruto_marge,
@@ -62,3 +65,266 @@ def bereken(what:str, company_id:int, date:str):
             return calculations[what](company_id, date)
         
         return f"""'Cannot perform the calculation for {what}. Currently only the following calculations are supported: {list(calculations.keys())}'"""
+
+def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DESC"):
+    """
+    Geeft de gevraagde hoeveelheid bedrijven terug gesorteerd op ASC or DESC voor een bepaalde periode
+
+    Vereiste:
+        - what (str): Het soort berekening dat gemaakt moet worden. Map indien mogelijk naar een van volgende woorden (EBITDA, verlies, balanstotaal, eigen vermogen, voorzieningen, 
+            handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
+
+    """
+    date = timezone.datetime.fromisoformat(date)
+    if limit > 100:
+          return "Dit is een te groot aantal bedrijven. Kies aub een kleinere hoeveelheid."
+    match what:
+          case "EBITDA":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                            ROW_NUMBER() OVER (
+                                                PARTITION BY company_id 
+                                                ORDER BY 
+                                                    (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                                    end_date DESC
+                                            ) AS rn
+                                        FROM periods
+                                        WHERE DATE_PART('year', end_date) = {date.year}
+                                    )
+
+                                    SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                                    FROM companies c
+                                    JOIN account_details ad ON c.company_id = ad.company_id
+                                    JOIN periods p ON ad.period_id = p.period_id
+                                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                                    WHERE ad.account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%'
+                                    GROUP BY c.company_id, c.name
+                                    ORDER BY total_value {sorted_how}
+                                    LIMIT {limit};
+                                    """
+          case "verlies":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "balanstotaal":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '60%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "eigen vermogen":
+                sql = "SIMILAR TO '16%'"
+          case "voorziening":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '16%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "handelswerkkapitaal":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT 
+                            c.company_id, 
+                            c.name, 
+                            SUM(CASE WHEN ad.account_number SIMILAR TO '30%|31%|32%|33%|34%|35%|36%|37%|40' 
+                                    THEN ad.value 
+                                    ELSE 0 
+                                END) 
+                            - SUM(CASE WHEN ad.account_number LIKE '44%' 
+                                    THEN ad.value 
+                                    ELSE 0 
+                                END) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "financiele schulden":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '16%|17%|42%|43%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "liquide middelen":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '50%|51%|52%|53%|54%|55%|56%|57%|58%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "bruto marge":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT 
+                            c.company_id, 
+                            c.name, 
+                            SUM(CASE WHEN ad.account_number SIMILAR TO '70%|71%|72%|74%' 
+                                    THEN ad.value 
+                                    ELSE 0 
+                                END) 
+                            - SUM(CASE WHEN ad.account_number LIKE '60%' 
+                                    THEN ad.value 
+                                    ELSE 0 
+                                END) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "omzet":
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '70%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {sorted_how}
+                        LIMIT {limit};
+                        """
+          case "EBITDA marge":
+                return
+          case "afschrijvingen":
+                return "SIMILAR TO '63%'"
+          case "EBIT":
+                return
+          case "Netto financiele schuld":
+                return
+          case "handelsvorderingen":
+                return
+          case "DSO":
+                return            
+                
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            results = cursor.fetchall()
+            return results
+        
+    
+    
+

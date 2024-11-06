@@ -19,7 +19,7 @@ from llama_index.embeddings.openai import (
 from llama_index.llms.openai import OpenAI
 from llama_index.vector_stores.postgres import PGVectorStore
 
-from calculator.calculator import bereken
+from calculator.calculator import bereken, vergelijk_op_basis_van
 from tools import (
     account_details,
     add,
@@ -90,7 +90,7 @@ def create_db_connection():
         password=cloud_db_pwd,
         port=cloud_port,
         user=cloud_db_user,
-        table_name="800_chunk_400_overlap",
+        table_name="vgd",
         embed_dim=756,  # openai embedding dimension
     )
     return cloud_aws_vector_store
@@ -153,7 +153,7 @@ def load_tools():
     afschrijvingen_tool= FunctionTool.from_defaults(bereken_afschrijvingen)
     EBIT_tool= FunctionTool.from_defaults(bereken_EBIT)
     netto_financiele_schuld_tool= FunctionTool.from_defaults(bereken_netto_financiele_schuld)
-    
+    vergelijk_op_basis_van_tool = FunctionTool.from_defaults(vergelijk_op_basis_van)
     bereken_tool = FunctionTool.from_defaults(bereken)
 
     
@@ -162,17 +162,17 @@ def load_tools():
             list_tables_tool, describe_tables_tool, load_data_tool, 
             #balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
             #voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
-            bereken_tool
+            bereken_tool, vergelijk_op_basis_van_tool
             ]
 tools = load_tools()
 
 
 system_prompt = '''
+GEBRUIK ALTIJD EEN TOOL!!!
+Als er een vraag wordt gesteld die je niet kan oplossen met je data tools gebruik dan standaard de financiele_informatie tool.
 Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
 BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
 BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
-Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
-Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
 Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
 Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
 Als er een berekening gevraagd wordt waarvoor er geen geschikte tool is, antwoord dan met "Sorry, dit kan ik nog niet berekenen."
