@@ -49,7 +49,7 @@ def bereken(what:str, company_id:int, date:str):
 
         Vereiste:
             - what (str): Het soort berekening dat gemaakt moet worden. Map indien mogelijk naar een van volgende woorden (EBITDA, verlies, balanstotaal, eigen vermogenm voorzieningen, 
-            handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
+            handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, DSO)
             - De company_id van het bedrijf, als je deze niet hebt maar wel de company naam, haal de id dan eerst uit de companies_ids_api_call tool. VRAAG NIET ACHTER DE ID.
             - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
 
@@ -66,7 +66,7 @@ def bereken(what:str, company_id:int, date:str):
         
         return f"""'Cannot perform the calculation for {what}. Currently only the following calculations are supported: {list(calculations.keys())}'"""
 
-def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DESC"):
+def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"):
     """
     Geeft de gevraagde hoeveelheid bedrijven terug gesorteerd op ASC or DESC voor een bepaalde periode
 
@@ -99,7 +99,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                                     JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                                     WHERE ad.account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%'
                                     GROUP BY c.company_id, c.name
-                                    ORDER BY total_value {sorted_how}
+                                    ORDER BY total_value {order_by}
                                     LIMIT {limit};
                                     """
           case "verlies":
@@ -122,7 +122,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         WHERE ad.account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%'
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "balanstotaal":
@@ -145,7 +145,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         WHERE ad.account_number SIMILAR TO '60%'
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "eigen vermogen":
@@ -170,7 +170,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         WHERE ad.account_number SIMILAR TO '16%'
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "handelswerkkapitaal":
@@ -202,7 +202,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN periods p ON ad.period_id = p.period_id
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "financiele schulden":
@@ -225,7 +225,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         WHERE ad.account_number SIMILAR TO '16%|17%|42%|43%'
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "liquide middelen":
@@ -248,7 +248,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         WHERE ad.account_number SIMILAR TO '50%|51%|52%|53%|54%|55%|56%|57%|58%'
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "bruto marge":
@@ -280,7 +280,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN periods p ON ad.period_id = p.period_id
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "omzet":
@@ -303,13 +303,81 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, sorted_how:str="DES
                         JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
                         WHERE ad.account_number SIMILAR TO '70%'
                         GROUP BY c.company_id, c.name
-                        ORDER BY total_value {sorted_how}
+                        ORDER BY total_value {order_by}
                         LIMIT {limit};
                         """
           case "EBITDA marge":
-                return
+                sql = f"""WITH latest_period AS (
+                    SELECT period_id, company_id,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY company_id 
+                            ORDER BY 
+                                (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                end_date DESC
+                        ) AS rn
+                    FROM periods
+                    WHERE DATE_PART('year', end_date) = {date.year}
+                ),
+
+                -- Bereken de EBITDA voor elk bedrijf
+                ebitda AS (
+                    SELECT c.company_id, c.name, SUM(ad.value) AS ebitda_value
+                    FROM companies c
+                    JOIN account_details ad ON c.company_id = ad.company_id
+                    JOIN periods p ON ad.period_id = p.period_id
+                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                    WHERE ad.account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%'
+                    GROUP BY c.company_id, c.name
+                ),
+
+                -- Bereken de omzet voor elk bedrijf
+                marge AS (
+                    SELECT c.company_id, SUM(ad.value) AS marge_value
+                    FROM companies c
+                    JOIN account_details ad ON c.company_id = ad.company_id
+                    JOIN periods p ON ad.period_id = p.period_id
+                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                    WHERE ad.account_number SIMILAR TO '70%'
+                    GROUP BY c.company_id
+                )
+
+                -- Combineer EBITDA en marge om de EBITDA-marge te berekenen
+                SELECT e.company_id, 
+                    e.name, 
+                    e.ebitda_value, 
+                    m.marge_value, 
+                    CASE 
+                        WHEN m.marge_value <> 0 THEN e.ebitda_value / m.marge_value
+                        ELSE NULL 
+                    END AS ebitda_marge
+                FROM ebitda e
+                JOIN marge m ON e.company_id = m.company_id
+                ORDER BY ebitda_marge {order_by}
+                LIMIT {limit};
+                """
           case "afschrijvingen":
-                return "SIMILAR TO '63%'"
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        )
+
+                        SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                        FROM companies c
+                        JOIN account_details ad ON c.company_id = ad.company_id
+                        JOIN periods p ON ad.period_id = p.period_id
+                        JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                        WHERE ad.account_number SIMILAR TO '63%'
+                        GROUP BY c.company_id, c.name
+                        ORDER BY total_value {order_by}
+                        LIMIT {limit};
+                        """
           case "EBIT":
                 return
           case "Netto financiele schuld":

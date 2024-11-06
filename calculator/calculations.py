@@ -401,5 +401,6 @@ def bereken_dso(company_id:int, date:str):
     '''            
     handelsvorderingen = bereken_handelsvorderingen(company_id, date)
     omzet = bereken_omzet(company_id, date)
-    
+    if omzet == 0:
+        return "De omzet is nul dus kan dit niet berekent worden"
     return (handelsvorderingen / omzet) * 365

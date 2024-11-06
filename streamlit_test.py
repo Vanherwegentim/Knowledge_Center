@@ -228,7 +228,7 @@ if st.session_state["authentication_status"] is None or st.session_state["authen
 
 
 col1, col2, col3 = st.sidebar.columns([1,6,1])
-col2.image("images/thumbnail-modified.png")
+col2.image("images/vgd2.jpg")
 
 firestore_string = st.secrets["FIRESTORE"]
 firestore_cred = json.loads(firestore_string)
@@ -242,7 +242,7 @@ def popup():
 if 'state_dict' not in st.session_state:
     st.session_state['state_dict'] = {}
     
-with st.sidebar.container(border=True):
+with st.sidebar.container():
     sidecol1, sidecol2, sidecode3 = st.columns(3)
     sidecol2.title("Acties")
 
@@ -297,7 +297,7 @@ if st.session_state["active_section"] == "Chatbot":
     for message in st.session_state.messages:
         if message["role"] != "system":
             if message["role"] == "assistant": 
-                with st.chat_message(message["role"], avatar="images/thumbnail.png"):
+                with st.chat_message(message["role"], avatar="images/vgd_logo3.jpeg"):
                     st.markdown(message["content"])
             else:
                 with st.chat_message(message["role"]):
@@ -309,7 +309,7 @@ if st.session_state["active_section"] == "Chatbot":
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            with st.chat_message("assistant", avatar="images/thumbnail.png"):
+            with st.chat_message("assistant", avatar="images/vgd_logo3.jpeg"):
                 with st.spinner("Thinking..."):
                     try:
                         mess = agent.stream_chat(prompt)
@@ -320,7 +320,7 @@ if st.session_state["active_section"] == "Chatbot":
                 response = st.write_stream(mess.response_gen)
                 st.session_state.messages.append({"role": "assistant", "content": response})
         if st.session_state.messages[-1]["role"] == "user":
-            with st.chat_message("assistant", avatar="images/thumbnail.png"):
+            with st.chat_message("assistant", avatar="images/vgd_logo3.jpeg"):
                 with st.spinner("Thinking..."):
                     try:
                         mess = agent.stream_chat(st.session_state.messages[-1]["content"])
