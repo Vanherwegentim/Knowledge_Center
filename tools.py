@@ -166,33 +166,26 @@ def company_id_to_name_converter(company_id:int):
         companies = json.load(file)
         return companies[str(company_id)]
      
-def has_tax_decreased_api_call(date: str, is_verlaagd:bool):
+def has_tax_decreased_api_call(company_id:int, date: str):
     """
-    Geeft een lijst van dossiers terug die wel of niet een verlaagd tarief genieten
-
+    Geeft de tax percentage van een bedrijf terug voor een bepaalde reconciliation. Als het tax percentage 20 is dan geniet het een verlaagd tarief, indien het 25 is dan geniet het bedrijf geen verlaagd tarief.
     Vereist:
     - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
-    - is_verlaagd (bool): Als is_verlaagd True is dan geef het de bedrijven terug die het verlaagd tarief genieten
-                          Als is_verlaagd False is dan geef het de bedrijven terug die het verlaagd tarief NIET genieten.
+    - company (int): De id van het bedrijf.
 
     Retourneert:
-    - Een lijst met de namen van de bedrijven die voldoen aan de voorwaarden.
+        Het tax percentage van het bedrijf
     """
-    with open("silverfin_api_static_db/reconcilliations_results.json", 'r') as file:
-        recons = json.load(file)
-    companies = set()
 
-    for id in recons.keys():
-        for period_id in period_id_fetcher(date, id):
-            for obj in recons[id][str(period_id)]:
-                if is_verlaagd:
-                    if obj.get("tax_percentage") == 20:
-                        companies.add(company_id_to_name_converter(id))
-                else:
-                    if obj.get("tax_percentage", 0) == 25:
-                        companies.add(company_id_to_name_converter(id))
+    sql = f"""SELECT tax_percentage
+                from reconciliation_results
+                where company_id = {company_id}"""
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            tax_percentage = cursor.fetchall()
 
-    return companies
+    return tax_percentage
                 
 
 def period_id_fetcher(date:str, company_id:int):

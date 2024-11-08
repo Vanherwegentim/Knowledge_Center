@@ -11,6 +11,8 @@ from google.cloud import firestore
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import VectorStoreIndex
 from llama_index.core.tools import FunctionTool, QueryEngineTool
+from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
+
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
     OpenAIEmbeddingMode,
@@ -102,22 +104,59 @@ def vector_store_index(_cloud_aws_vector_store):
     return index
 index = vector_store_index(cloud_aws_vector_store)
 
+system_prompt = """
+Je bent een vertrouwde financiële expert in België die het personeel van het bedrijf VGD helpt met perfect advies. Het is jouw taak om een feitelijk en volledig antwoord te geven op de gestelde vraag op basis van de informatie die je verkrijgt via de beschikbare tools.
+
+**Belangrijke richtlijnen:**
+
+- **Gebruik altijd de tool 'Financiele_informatie' om informatie op te halen voor elke vraag.** Baseer je antwoorden uitsluitend op informatie uit deze tool.
+
+- **Beantwoord alleen vragen die betrekking hebben op financiële onderwerpen of gerelateerd zijn aan de financiële sector.** Dit omvat ook vragen over software (zoals Excel) of programma's die in de financiële sector worden gebruikt.
+
+- **Negeer vragen die geen enkele relatie hebben met financiële onderwerpen of de financiële sector.**
+
+- Als de vraag betrekking heeft op specifieke codes, vakken of financiële tools, leg dan de focus op het uitleggen van die items.
+
+- **Vermijd het gebruik van zinnen zoals "volgens de passage" of "volgens de context" in je antwoord.**
+
+- Maak je antwoord overzichtelijk, gebruik opsommingstekens indien nodig, en zorg voor een duidelijke structuur.
+
+- **Geef voldoende en nauwkeurige informatie** om de vraag volledig te beantwoorden.
+
+- Schrijf in helder en professioneel Nederlands, met de juiste terminologie.
+
+- **Gebruik geen informatie buiten de 'Financiele_informatie' tool**, zelfs als je over externe kennis beschikt.
+
+"""
+
+
 llm = OpenAI(model="gpt-4o", temperature=0,
-             system_prompt="""Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
-BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
-BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
-Als de context codes of vakken bevatten, moet de focus op de codes en vakken liggen.
-Je antwoord MAG NIET iets zeggen als “volgens de passage” of “context”.
-Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
-Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
-GEEF VOLDOENDE INFORMATIE!
-             """)
+             system_prompt=system_prompt)
+
+description = """
+'Financiele_informatie' is een uitgebreide RAG-database die diepgaande informatie bevat over:
+
+- **Belgische belastingen en financiële wetgevingen**
+- **Fiscale codes en relevante vakken**
+- **Software en programma's die in de financiële sector worden gebruikt (zoals Excel)**
+- **Best practices en tools voor financiële professionals**
+
+Gebruik deze tool altijd om:
+
+- **Algemene en specifieke financiële vragen** te beantwoorden.
+- **Informatie over belastingcodes, vakken en financiële software** te verstrekken.
+- **Actuele wetgevingen, regelgeving en technologische ontwikkelingen** te raadplegen binnen de financiële sector.
+
+**Belangrijk:** Baseer al je antwoorden uitsluitend op de informatie die je via deze tool verkrijgt. Voeg geen externe informatie toe, zelfs niet als je deze kent.
+"""
+
+
 
 query_engine = index.as_query_engine(llm=llm)
 budget_tool = QueryEngineTool.from_defaults(
     query_engine,
     name="Financiele_informatie",
-    description="Een RAG database met een extensieve hoeveelheid informatie rond belastingen en wetgevingen. Roep dit aan voor algemene financiele vragen en wanneer er gevraagd wordt achter vakken en codes.",
+    description=description,
 )
 @st.cache_resource
 def load_tools():
@@ -167,23 +206,13 @@ def load_tools():
 tools = load_tools()
 
 
-system_prompt = '''
-GEBRUIK ALTIJD EEN TOOL!!!
-Als er een vraag wordt gesteld die je niet kan oplossen met je data tools gebruik dan standaard de financiele_informatie tool.
-Het is jouw taak om een feitelijk antwoord op de gesteld vraag op basis van de gegeven context en wat je weet zelf weet.
-BEANTWOORD ENKEL DE VRAAG ALS HET EEN FINANCIELE VRAAG IS!
-BEANTWOORD ENKEL ALS DE VRAAG RELEVANTE CONTEXT HEEFT!!
-Maak je antwoord overzichtelijk met opsommingstekens indien nodig.
-Jij bent een vertrouwd financieel expert in België die mensen helpt met perfect advies.
-Als er een berekening gevraagd wordt waarvoor er geen geschikte tool is, antwoord dan met "Sorry, dit kan ik nog niet berekenen."
-GEEF VOLDOENDE INFORMATIE!
-'''
 
 @st.cache_resource
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
+    buffer = ChatMemoryBuffer(token_limit=300)
     agent = OpenAIAgent.from_tools(
-        tools, verbose=True, llm=llm, system_prompt=system_prompt
+        tools, verbose=True, llm=llm, system_prompt=system_prompt, memory_cls=buffer
     )
     return agent
 
