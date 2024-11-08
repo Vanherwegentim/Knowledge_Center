@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#F0F0F0"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FFFFFF"  # Optional: a slightly different white for sidebars/secondary areas
+textColor = "#000000"  # Black text for readability on white background
+font = "sans serif"    # Optional: You can choose a different font like "monospace" or "serif"
