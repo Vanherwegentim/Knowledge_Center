@@ -23,7 +23,6 @@ from django.utils import timezone
 calculations = {
     'EBITDA': bereken_EBITDA,
     'verlies': bereken_VERLIES,
-    
     'balanstotaal': bereken_balanstotaal,
     'eigen vermogen': bereken_eigen_vermogen,
     'voorzieningen': bereken_voorzieningen,

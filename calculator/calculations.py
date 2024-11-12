@@ -61,7 +61,7 @@ def bereken_OMZET(company_id:int, date:str):
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
             if isinstance(period_id, str):  # If the result is the error message
-                    return period_id
+                return period_id
             sql = f"""SELECT *
                 FROM account_details
                 WHERE 
@@ -425,6 +425,10 @@ def bereken_dso(company_id:int, date:str):
     '''            
     handelsvorderingen = bereken_handelsvorderingen(company_id, date)
     omzet = bereken_omzet(company_id, date)
+    if isinstance(handelsvorderingen, str):  # If the result is the error message
+        return handelsvorderingen
+    if isinstance(omzet,str):
+        return omzet
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             date = timezone.datetime.fromisoformat(date)
@@ -451,4 +455,4 @@ def bereken_dso(company_id:int, date:str):
             days = date_1 - date_2
     if omzet == 0:
         return "De omzet is nul dus kan dit niet berekend worden"
-    return (handelsvorderingen / omzet) * days
+    return (handelsvorderingen / omzet) * days * -1

@@ -38,35 +38,41 @@ from tools import (
     get_date,
 )
 
-st.set_page_config(layout="wide", page_title="Fintrax Knowledge Center", page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png")
+st.set_page_config(
+    layout="wide",
+    page_title="Fintrax Knowledge Center",
+    page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png",
+)
 
-#Load tools
+# Load tools
 
 
 # Set up OpenAI client
-OPENAI_API_KEY = st.secrets['OPENAI_API_KEY']
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 COLLECTION_NAME = "openai_vectors"  # Milvus collection name
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-#Authentication
+# Authentication
 import yaml
 from yaml.loader import SafeLoader
 
-with open('credentials.yaml') as file:
+with open("credentials.yaml") as file:
     config = yaml.load(file, Loader=SafeLoader)
 authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
+    config["credentials"],
+    config["cookie"]["name"],
+    config["cookie"]["key"],
+    config["cookie"]["expiry_days"],
 )
 
-#Vector DB Setup
+# Vector DB Setup
 cloud_host = st.secrets["db_host"]
 cloud_port = st.secrets["db_port"]
 cloud_db_name = st.secrets["db_name"]
 cloud_db_pwd = st.secrets["db_pwd"]
 cloud_db_user = st.secrets["db_user"]
+cloud_db_table_name = st.secrets["db_table_name"]
+
 
 @st.cache_resource
 def create_db_connection():
@@ -76,16 +82,28 @@ def create_db_connection():
         password=cloud_db_pwd,
         port=cloud_port,
         user=cloud_db_user,
-        table_name="vgd",
+        table_name=cloud_db_table_name,
         embed_dim=756,  # openai embedding dimension
     )
     return cloud_aws_vector_store
+
+
 cloud_aws_vector_store = create_db_connection()
+
 
 @st.cache_resource
 def vector_store_index(_cloud_aws_vector_store):
-    index = VectorStoreIndex.from_vector_store(cloud_aws_vector_store,embed_model=OpenAIEmbedding(mode=OpenAIEmbeddingMode.SIMILARITY_MODE, model=OpenAIEmbeddingModelType.TEXT_EMBED_3_SMALL, dimensions=756))
+    index = VectorStoreIndex.from_vector_store(
+        cloud_aws_vector_store,
+        embed_model=OpenAIEmbedding(
+            mode=OpenAIEmbeddingMode.SIMILARITY_MODE,
+            model=OpenAIEmbeddingModelType.TEXT_EMBED_3_SMALL,
+            dimensions=756,
+        ),
+    )
     return index
+
+
 index = vector_store_index(cloud_aws_vector_store)
 
 system_prompt = """
@@ -108,8 +126,7 @@ Je bent een vertrouwde financiële expert in België die het personeel van het b
 """
 
 
-llm = OpenAI(model="gpt-4o", temperature=0,
-             system_prompt=system_prompt)
+llm = OpenAI(model="gpt-4o", temperature=0, system_prompt=system_prompt)
 
 description = """
 'Financiele_informatie' is een uitgebreide RAG-database die diepgaande informatie bevat over:
@@ -129,20 +146,20 @@ Gebruik deze tool altijd om:
 """
 
 
-
 query_engine = index.as_query_engine(llm=llm)
 budget_tool = QueryEngineTool.from_defaults(
     query_engine,
     name="Financiele_informatie",
     description=description,
 )
+
+
 @st.cache_resource
 def load_tools():
     multiply_tool = FunctionTool.from_defaults(fn=multiply)
     add_tool = FunctionTool.from_defaults(fn=add)
     company_tool = FunctionTool.from_defaults(fn=company_api_call)
     companies_tool = FunctionTool.from_defaults(fn=companies_ids_api_call)
-    period_tool = FunctionTool.from_defaults(fn=period_api_call)
     tarief_tax_tool = FunctionTool.from_defaults(fn=has_tax_decreased_api_call)
     period_tool = FunctionTool.from_defaults(fn=period_id_fetcher)
     account_tool = FunctionTool.from_defaults(fn=account_details)
@@ -154,19 +171,29 @@ def load_tools():
     bereken_tool = FunctionTool.from_defaults(bereken)
     get_datum_tool = FunctionTool.from_defaults(get_date)
 
-    
-    return [reconciliation_tool, budget_tool, tarief_tax_tool, companies_tool,account_tool, period_tool, company_tool, 
-            #EBITDA_tool, 
-            list_tables_tool, describe_tables_tool, load_data_tool, 
-            #balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
-            #voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
-            bereken_tool, vergelijk_op_basis_van_tool, get_datum_tool
-            ]
+    return [
+        reconciliation_tool,
+        budget_tool,
+        tarief_tax_tool,
+        companies_tool,
+        account_tool,
+        period_tool,
+        company_tool,
+        # EBITDA_tool,
+        list_tables_tool,
+        describe_tables_tool,
+        load_data_tool,
+        # balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
+        # voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
+        bereken_tool,
+        vergelijk_op_basis_van_tool,
+        get_datum_tool,
+    ]
+
+
 tools = load_tools()
 
 
-
-@st.cache_resource
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
     buffer = ChatMemoryBuffer(token_limit=300)
@@ -175,11 +202,13 @@ def create_agent():
     )
     return agent
 
-agent = create_agent()
+
+if "agent" not in st.session_state:
+    st.session_state.agent = create_agent()
+agent = st.session_state.agent
 
 
-
-#CSS injection that makes the user input right-aligned
+# CSS injection that makes the user input right-aligned
 st.markdown(
     """
 <style>
@@ -192,12 +221,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 
 if st.session_state.get("UUID") is None:
     st.session_state["UUID"] = uuid4().hex
 
-if st.session_state["authentication_status"] is None or st.session_state["authentication_status"] is False :
+if (
+    st.session_state["authentication_status"] is None
+    or st.session_state["authentication_status"] is False
+):
     st.title("Welkom bij het Knowledge Center!")
     try:
         authenticator.login()
@@ -208,14 +240,13 @@ if st.session_state["authentication_status"] is None or st.session_state["authen
         st.session_state["active_section"] = "Chatbot"
 
     elif st.session_state["authentication_status"] is False:
-        st.error('Username/password is incorrect')
+        st.error("Username/password is incorrect")
     elif st.session_state["authentication_status"] is None:
-        st.warning('Please enter your username and password')
+        st.warning("Please enter your username and password")
         st.session_state["active_section"] = "Username"
 
 
-
-col1, col2, col3 = st.sidebar.columns([1,6,1])
+col1, col2, col3 = st.sidebar.columns([1, 6, 1])
 col2.image("images/vgd2.webp")
 
 firestore_string = st.secrets["FIRESTORE"]
@@ -224,51 +255,83 @@ db = firestore.Client.from_service_account_info(firestore_cred)
 
 
 def popup():
-    if "username" not in st.session_state and st.session_state.username is not None:
+    if "username" not in st.session_state or st.session_state["username"] is None:
         st.toast("U moet inloggen voor deze functionaliteit.")
 
-if 'state_dict' not in st.session_state:
-    st.session_state['state_dict'] = {}
-    
+
+if "state_dict" not in st.session_state:
+    st.session_state["state_dict"] = {}
+
 with st.sidebar.container():
     sidecol1, sidecol2, sidecode3 = st.columns(3)
     sidecol2.title("Acties")
 
-    chatbot_button = st.button("Knowledge Center", use_container_width=True,on_click=popup)
-    upload_button = st.button("Upload Files", use_container_width=True,on_click=popup)
-    connecties = st.button("Connecties", use_container_width=True,on_click=popup)
-    voorkeuren = st.button("Voorkeuren", use_container_width=True,on_click=popup)
+    chatbot_button = st.button(
+        "Knowledge Center", use_container_width=True, on_click=popup
+    )
+    upload_button = st.button("Upload Files", use_container_width=True, on_click=popup)
+    connecties = st.button("Connecties", use_container_width=True, on_click=popup)
+    voorkeuren = st.button("Voorkeuren", use_container_width=True, on_click=popup)
     rapporten = st.button("Rapporten", use_container_width=True, on_click=popup)
     uitloggen = st.button("Log Uit", use_container_width=True, on_click=popup)
 
 
 if st.secrets["PROD"] == "False" and "user_name" in st.session_state:
-        if os.path.exists(f"analytics/{st.session_state.user_name}.json"):
-            streamlit_analytics2.start_tracking(load_from_json=f"analytics/{st.session_state.user_name}.json")
-        else:
-            streamlit_analytics2.main.reset_counts()
-            streamlit_analytics2.start_tracking()
+    if os.path.exists(f"analytics/{st.session_state.user_name}.json"):
+        streamlit_analytics2.start_tracking(
+            load_from_json=f"analytics/{st.session_state.user_name}.json"
+        )
+    else:
+        streamlit_analytics2.main.reset_counts()
+        streamlit_analytics2.start_tracking()
 
 else:
     streamlit_analytics2.start_tracking()
+
 if "active_section" not in st.session_state:
     st.session_state["active_section"] = "Username"
-if chatbot_button and "username" in st.session_state and st.session_state.username is not None or st.session_state.active_section == "Username" and st.session_state.username is not None:
+if (
+    chatbot_button
+    and "username" in st.session_state
+    and st.session_state.username is not None
+    or st.session_state.active_section == "Username"
+    and st.session_state.username is not None
+):
     st.session_state["active_section"] = "Chatbot"
 
-if upload_button and "username" in st.session_state and st.session_state.username is not None:
+if (
+    upload_button
+    and "username" in st.session_state
+    and st.session_state.username is not None
+):
     st.session_state["active_section"] = "Upload Files"
 
-if connecties and "username" in st.session_state and st.session_state.username is not None:
+if (
+    connecties
+    and "username" in st.session_state
+    and st.session_state.username is not None
+):
     st.session_state["active_section"] = "Connecties"
 
-if voorkeuren and "username" in st.session_state and st.session_state.username is not None:
+if (
+    voorkeuren
+    and "username" in st.session_state
+    and st.session_state.username is not None
+):
     st.session_state["active_section"] = "Voorkeuren"
 
-if rapporten and "username" in st.session_state and st.session_state.username is not None:
+if (
+    rapporten
+    and "username" in st.session_state
+    and st.session_state.username is not None
+):
     st.session_state["active_section"] = "Rapporten"
 
-if uitloggen and "username" in st.session_state and st.session_state.username is not None:
+if (
+    uitloggen
+    and "username" in st.session_state
+    and st.session_state.username is not None
+):
     st.session_state["active_section"] = "Uitloggen"
 
 
@@ -280,11 +343,16 @@ if st.session_state["active_section"] == "Chatbot":
         st.session_state["openai_model"] = "gpt-4o"
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!"}]
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!",
+            }
+        ]
 
     for message in st.session_state.messages:
         if message["role"] != "system":
-            if message["role"] == "assistant": 
+            if message["role"] == "assistant":
                 with st.chat_message(message["role"], avatar="images/vgd_logo3.jpeg"):
                     st.markdown(message["content"])
             else:
@@ -301,45 +369,53 @@ if st.session_state["active_section"] == "Chatbot":
                 with st.spinner("Thinking..."):
                     try:
                         mess = agent.stream_chat(prompt)
-                        
+
                     except Exception as e:
                         response = "Sorry, there was an error processing your request. Please try again."
                         st.error("Error in agent response: " + str(e))
                 response = st.write_stream(mess.response_gen)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
         if st.session_state.messages[-1]["role"] == "user":
             with st.chat_message("assistant", avatar="images/vgd_logo3.jpeg"):
                 with st.spinner("Thinking..."):
                     try:
-                        mess = agent.stream_chat(st.session_state.messages[-1]["content"])
+                        mess = agent.stream_chat(
+                            st.session_state.messages[-1]["content"]
+                        )
                     except Exception as e:
                         response = "Sorry, there was an error processing your request. Please try again."
                         st.error("Error in agent response: " + str(e))
                 response = st.write_stream(mess.response_gen)
-                st.session_state.messages.append({"role": "assistant", "content": response})
-            
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
+
     except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again."
-                        st.error("Error in agent response: " + str(e))
-
-
+        response = (
+            "Sorry, there was an error processing your request. Please try again."
+        )
+        st.error("Error in agent response: " + str(e))
 
 
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Upload Files":
     st.title("Upload Files")
     st.markdown("Deze functie is nog niet beschikbaar")
-    uploaded_file = st.file_uploader("Choose a file", type=["txt", "pdf", "docx", "csv"])
-    
+    uploaded_file = st.file_uploader(
+        "Choose a file", type=["txt", "pdf", "docx", "csv"]
+    )
+
     if uploaded_file is not None:
         # Display basic information about the uploaded file
         st.write(f"Uploaded file: {uploaded_file.name}")
-        
+
         # Example: Reading text files and displaying the content
         if uploaded_file.type == "text/plain":
             content = uploaded_file.read().decode("utf-8")
             st.text_area("File Content", content, height=300)
-        
+
         # Example for handling other file types (CSV, PDF, etc.) can be added here
         file_type = uploaded_file.type
         st.write(f"File type: {file_type}")
@@ -348,17 +424,21 @@ elif st.session_state["active_section"] == "Upload Files":
 # If Upload Files is selected
 elif st.session_state["active_section"] == "Connecties":
     st.title("Connecties")
-    st.markdown("Deze functie is nog niet beschikbaar, verbinden met de API gaat nog geen data doorgeven.")
+    st.markdown(
+        "Deze functie is nog niet beschikbaar, verbinden met de API gaat nog geen data doorgeven."
+    )
 
-    fin1,fin2,fin3 = st.columns(3)
+    fin1, fin2, fin3 = st.columns(3)
     with fin1:
         with st.container(border=True):
             fincol1, fincol2 = st.columns(2)
             fincol1.image("images/silverfin-logo.png")
             fincol2.subheader("Silverfin")
-            fincol2.markdown("""Naam: Fiduciaire ABC
+            fincol2.markdown(
+                """Naam: Fiduciaire ABC
                                 ID: 561
-                                mark@abcaccouting.be""")
+                                mark@abcaccouting.be"""
+            )
             verbindfin = st.button("Connecteer Silverfin", use_container_width=True)
             if verbindfin:
                 with st.spinner("Verbinden..."):
@@ -370,8 +450,10 @@ elif st.session_state["active_section"] == "Connecties":
             fincol1, fincol2 = st.columns(2)
             fincol1.image("images/mmf-logo.png")
             fincol2.subheader("MyMinFin")
-            fincol2.markdown("""Naam: FIDUCIAIRE ABC 
-                                support@fintrax.io""")
+            fincol2.markdown(
+                """Naam: FIDUCIAIRE ABC 
+                                support@fintrax.io"""
+            )
             verbindmy = st.button("Connecteer MyMinFin", use_container_width=True)
             if verbindmy:
                 with st.spinner("Verbinden..."):
@@ -383,26 +465,27 @@ elif st.session_state["active_section"] == "Voorkeuren":
     st.title("Voorkeuren")
     st.markdown("Maak hier je standaardvragen of rapporten aan")
     # Initialize session state to store questions
-    if 'questions' not in st.session_state:
+    if "questions" not in st.session_state:
         st.session_state.questions = []
 
     # Function to add a new question input field
     def add_question():
         st.session_state.questions.append("")
-    
+
     def remove_question():
         if st.session_state.questions != 0:
-            st.session_state.questions=st.session_state.questions[:-1]
+            st.session_state.questions = st.session_state.questions[:-1]
 
-
-    add, rem, _ = st.columns([1,1,30])
+    add, rem, _ = st.columns([1, 1, 30])
     # Button to add a new question dynamically
-    add.button('\+', on_click=add_question)
-    rem.button('\-', on_click=remove_question)
+    add.button("\+", on_click=add_question)
+    rem.button("\-", on_click=remove_question)
 
     # Display the input fields for the questions dynamically
     for i, question in enumerate(st.session_state.questions):
-        st.session_state.questions[i] = st.text_input(f"Question {i+1}:", value=question, key=f"question_{i}")
+        st.session_state.questions[i] = st.text_input(
+            f"Question {i+1}:", value=question, key=f"question_{i}"
+        )
 
     # Button to save the form
     if st.button("Opslaan"):
@@ -413,7 +496,7 @@ elif st.session_state["active_section"] == "Rapporten":
     st.markdown("Deze functie is nog niet beschikbaar")
     if "questions" in st.session_state:
         st.dataframe({"Vragen": st.session_state.questions}, width=800)
-        if st.button('Voer Uit'):
+        if st.button("Voer Uit"):
             time.sleep(3)
             st.success("Uitgevoerd!")
 
@@ -425,22 +508,30 @@ elif st.session_state["active_section"] == "Uitloggen":
         st.error(e)
 
     if st.session_state["authentication_status"]:
-        authenticator.logout()    
+        authenticator.logout()
 
     elif st.session_state["authentication_status"] is False:
-        st.error('Username/password is incorrect')
+        st.error("Username/password is incorrect")
     elif st.session_state["authentication_status"] is None:
-        st.warning('Please enter your username and password')
+        st.warning("Please enter your username and password")
         st.session_state["active_section"] = "Username"
-          
 
 
-if st.secrets["PROD"] == "False" and "username" in st.session_state and "UUID" in st.session_state:
-    streamlit_analytics2.stop_tracking(save_to_json=f"analytics/{st.session_state.email}.json", unsafe_password=st.secrets["ANALYTICS_PWD"])
-    doc_ref = db.collection('users').document(str(st.session_state.email))
-    
+if (
+    st.secrets["PROD"] == "False"
+    and "username" in st.session_state
+    and "UUID" in st.session_state
+):
+    streamlit_analytics2.stop_tracking(
+        save_to_json=f"analytics/{st.session_state.email}.json",
+        unsafe_password=st.secrets["ANALYTICS_PWD"],
+    )
+    doc_ref = db.collection("users").document(str(st.session_state.email))
+
     analytics_data = pd.read_json(f"analytics/{st.session_state.email}.json").to_dict()
-    analytics_data["chat"] = {st.session_state.get('UUID'): st.session_state.get("messages")}
+    analytics_data["chat"] = {
+        st.session_state.get("UUID"): st.session_state.get("messages")
+    }
     doc_ref.set(analytics_data, merge=True)
 else:
     streamlit_analytics2.stop_tracking()
