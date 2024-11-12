@@ -399,7 +399,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"
                         LIMIT {limit};
                         """
           case "EBIT":
-                sql = """WITH latest_period AS (
+                sql = f"""WITH latest_period AS (
                             SELECT period_id, company_id,
                                 ROW_NUMBER() OVER (
                                     PARTITION BY company_id 
@@ -445,7 +445,7 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"
                         LIMIT {limit};
                         """
           case "Netto financiele schuld":
-                sql = """WITH latest_period AS (
+                sql = f"""WITH latest_period AS (
                             SELECT period_id, company_id,
                                 ROW_NUMBER() OVER (
                                     PARTITION BY company_id 
@@ -513,8 +513,8 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"
                                     ORDER BY total_value {order_by}
                                     LIMIT {limit};
                                     """
-          case "DSO":
-                sql = """WITH latest_period AS (
+          case "dso":
+                sql = f"""WITH latest_period AS (
                     SELECT period_id, company_id,
                         ROW_NUMBER() OVER (
                             PARTITION BY company_id 
@@ -551,11 +551,12 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"
                 -- Main query to join the results and perform the division
                 SELECT v40.name, 
                     CASE 
-                        WHEN v70.total_value_70 <> 0 THEN abs(v40.total_value_40 / v70.total_value_70)
+                        WHEN v70.total_value_70 <> 0 THEN abs(v40.total_value_40 / v70.total_value_70) * 365
                         ELSE NULL 
                     END AS result_ratio
                 FROM value_40 v40
                 JOIN value_70 v70 ON v40.company_id = v70.company_id
+                WHERE v70.total_value_70 <> 0
                 ORDER BY result_ratio {order_by}
                 LIMIT {limit};
                 """          

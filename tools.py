@@ -137,7 +137,7 @@ def company_id_to_name_converter(company_id:int):
      
 def has_tax_decreased_api_call(company_id: int, date: str):
     """
-    Haalt het belastingpercentage op voor een bedrijf op een specifieke datum.
+    Haalt het belastingpercentage op voor een bedrijf op een specifieke datum. Als het 20% dan is het een verlaagd tarief. Als het 25% is dan is het een normaal tarief.
     Args:
         company_id (int): Unieke identificatie van het bedrijf, bijv. 12345.
         date (str): Datum in "YYYY-MM-DD"-formaat, bijv. "2023-12-31".
