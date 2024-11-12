@@ -342,7 +342,7 @@ def bereken_EBIT(company_id:int, date:str):
     '''
     ebitda = bereken_EBITDA(company_id, date)
     afschrijvingen = bereken_afschrijvingen(company_id, date)
-    return ebitda - afschrijvingen
+    return ebitda + afschrijvingen
 
 def bereken_netto_financiele_schuld(company_id:int, date:str):
     '''

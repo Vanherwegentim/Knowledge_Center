@@ -399,13 +399,166 @@ def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"
                         LIMIT {limit};
                         """
           case "EBIT":
-                return
+                sql = """WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        ),
+
+                        -- CTE to calculate the total_value for account numbers starting with '60%|61%|62%|64%|70%|71%|72%|73%|74%'
+                        value_main AS (
+                            SELECT c.company_id, c.name, SUM(ad.value) AS total_value_main
+                            FROM companies c
+                            JOIN account_details ad ON c.company_id = ad.company_id
+                            JOIN periods p ON ad.period_id = p.period_id
+                            JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                            WHERE ad.account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%'
+                            GROUP BY c.company_id, c.name
+                        ),
+
+                        -- CTE to calculate the total_value for account numbers starting with '63%'
+                        value_63 AS (
+                            SELECT c.company_id, SUM(ad.value) AS total_value_63
+                            FROM companies c
+                            JOIN account_details ad ON c.company_id = ad.company_id
+                            JOIN periods p ON ad.period_id = p.period_id
+                            JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                            WHERE ad.account_number SIMILAR TO '63%'
+                            GROUP BY c.company_id
+                        )
+
+                        -- Main query to join the results and perform the subtraction
+                        SELECT v_main.company_id, 
+                            v_main.name, 
+                            v_main.total_value_main, 
+                            v_63.total_value_63,
+                            v_main.total_value_main - v_63.total_value_63 AS result_difference
+                        FROM value_main v_main
+                        JOIN value_63 v_63 ON v_main.company_id = v_63.company_id
+                        ORDER BY result_difference {order_by}
+                        LIMIT {limit};
+                        """
           case "Netto financiele schuld":
-                return
+                sql = """WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY company_id 
+                                    ORDER BY 
+                                        (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                        end_date DESC
+                                ) AS rn
+                            FROM periods
+                            WHERE DATE_PART('year', end_date) = {date.year}
+                        ),
+
+                        -- CTE to calculate the total_value for account numbers starting with '16%|17%|42%|43%'
+                        value_1 AS (
+                            SELECT c.company_id, c.name, SUM(ad.value) AS total_value_1
+                            FROM companies c
+                            JOIN account_details ad ON c.company_id = ad.company_id
+                            JOIN periods p ON ad.period_id = p.period_id
+                            JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                            WHERE ad.account_number SIMILAR TO '16%|17%|42%|43%'
+                            GROUP BY c.company_id, c.name
+                        ),
+
+                        -- CTE to calculate the total_value for account numbers starting with '50%|51%|52%|53%|54%|55%|56%|57%|58%'
+                        value_2 AS (
+                            SELECT c.company_id, SUM(ad.value) AS total_value_2
+                            FROM companies c
+                            JOIN account_details ad ON c.company_id = ad.company_id
+                            JOIN periods p ON ad.period_id = p.period_id
+                            JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                            WHERE ad.account_number SIMILAR TO '50%|51%|52%|53%|54%|55%|56%|57%|58%'
+                            GROUP BY c.company_id
+                        )
+
+                        -- Main query to join the results and perform the subtraction
+                        SELECT v1.company_id, 
+                            v1.name, 
+                            v1.total_value_1, 
+                            v2.total_value_2,
+                            v1.total_value_1 - v2.total_value_2 AS result_difference
+                        FROM value_1 v1
+                        JOIN value_2 v2 ON v1.company_id = v2.company_id
+                        ORDER BY result_difference {order_by}
+                        LIMIT {limit};
+                        """
           case "handelsvorderingen":
-                return
+                sql = f"""WITH latest_period AS (
+                            SELECT period_id, company_id,
+                                            ROW_NUMBER() OVER (
+                                                PARTITION BY company_id 
+                                                ORDER BY 
+                                                    (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                                    end_date DESC
+                                            ) AS rn
+                                        FROM periods
+                                        WHERE DATE_PART('year', end_date) = {date.year}
+                                    )
+
+                                    SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                                    FROM companies c
+                                    JOIN account_details ad ON c.company_id = ad.company_id
+                                    JOIN periods p ON ad.period_id = p.period_id
+                                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                                    WHERE ad.account_number SIMILAR TO '40%'
+                                    GROUP BY c.company_id, c.name
+                                    ORDER BY total_value {order_by}
+                                    LIMIT {limit};
+                                    """
           case "DSO":
-                return            
+                sql = """WITH latest_period AS (
+                    SELECT period_id, company_id,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY company_id 
+                            ORDER BY 
+                                (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
+                                end_date DESC
+                        ) AS rn
+                    FROM periods
+                    WHERE DATE_PART('year', end_date) = {date.year}
+                ),
+
+                -- First CTE to calculate the total_value for account numbers starting with '40%'
+                value_40 AS (
+                    SELECT c.company_id, c.name, SUM(ad.value) AS total_value_40
+                    FROM companies c
+                    JOIN account_details ad ON c.company_id = ad.company_id
+                    JOIN periods p ON ad.period_id = p.period_id
+                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                    WHERE ad.account_number SIMILAR TO '40%'
+                    GROUP BY c.company_id, c.name
+                ),
+
+                -- Second CTE to calculate the total_value for account numbers starting with '70%'
+                value_70 AS (
+                    SELECT c.company_id, SUM(ad.value) AS total_value_70
+                    FROM companies c
+                    JOIN account_details ad ON c.company_id = ad.company_id
+                    JOIN periods p ON ad.period_id = p.period_id
+                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
+                    WHERE ad.account_number SIMILAR TO '70%'
+                    GROUP BY c.company_id
+                )
+
+                -- Main query to join the results and perform the division
+                SELECT v40.name, 
+                    CASE 
+                        WHEN v70.total_value_70 <> 0 THEN abs(v40.total_value_40 / v70.total_value_70)
+                        ELSE NULL 
+                    END AS result_ratio
+                FROM value_40 v40
+                JOIN value_70 v70 ON v40.company_id = v70.company_id
+                ORDER BY result_ratio {order_by}
+                LIMIT {limit};
+                """          
                 
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
