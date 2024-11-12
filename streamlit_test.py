@@ -105,8 +105,6 @@ Je bent een vertrouwde financiële expert in België die het personeel van het b
 
 - Schrijf in helder en professioneel Nederlands, met de juiste terminologie.
 
-- **Gebruik geen informatie buiten de 'Financiele_informatie' tool**, zelfs als je over externe kennis beschikt.
-
 """
 
 

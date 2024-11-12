@@ -26,6 +26,8 @@ def bereken_EBITDA(company_id:int, date:str):
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 period_id = get_period_ids(cursor, company_id, date)
+                if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
                 sql = f"""SELECT *
                     FROM account_details
                     WHERE 
@@ -58,6 +60,8 @@ def bereken_OMZET(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             sql = f"""SELECT *
                 FROM account_details
                 WHERE 
@@ -88,6 +92,8 @@ def bereken_VERLIES(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             sql = f"""SELECT *
                 FROM account_details
                 WHERE 
@@ -119,6 +125,8 @@ def bereken_balanstotaal(company_id:int, date:str):
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 period_id = get_period_ids(cursor,company_id,date)
+                if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
                 sql = f"""SELECT value
                     FROM account_details
                     WHERE 
@@ -169,6 +177,8 @@ def bereken_voorzieningen(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [16])
             
             result = sum([float(record[0]) for record in additives])
@@ -191,6 +201,8 @@ def bereken_handelswerkkapitaal(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40])
             negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [44])
             
@@ -214,6 +226,8 @@ def bereken_financiele_schulden(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [16, 17, 42, 43])
             
             result = sum([float(record[0]) for record in additives])
@@ -236,6 +250,8 @@ def bereken_liquide_middelen(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [50, 51, 52, 53 ,54, 55, 56, 57, 58])
             
             result = sum([float(record[0]) for record in additives])
@@ -258,6 +274,8 @@ def bereken_bruto_marge(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70, 71, 72, 74])
             negatives = get_acount_details_by_account_number(cursor, company_id, period_id, [60])
             
@@ -281,6 +299,8 @@ def bereken_omzet(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [70])
                         
             result = sum([float(record[0]) for record in additives])
@@ -321,6 +341,8 @@ def bereken_afschrijvingen(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [63])
                         
             result = sum([float(record[0]) for record in additives])
@@ -380,6 +402,8 @@ def bereken_handelsvorderingen(company_id:int, date:str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor,company_id,date)
+            if isinstance(period_id, str):  # If the result is the error message
+                    return period_id
             additives = get_acount_details_by_account_number(cursor, company_id, period_id, [40])
             
             result = sum([float(record[0]) for record in additives])
