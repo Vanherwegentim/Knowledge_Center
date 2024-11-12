@@ -425,6 +425,30 @@ def bereken_dso(company_id:int, date:str):
     '''            
     handelsvorderingen = bereken_handelsvorderingen(company_id, date)
     omzet = bereken_omzet(company_id, date)
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            date = timezone.datetime.fromisoformat(date)
+            period_ids_query = f"""
+            SELECT end_date, fiscal_year_start
+            FROM periods
+            WHERE company_id = {company_id}
+            AND (
+                end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year}
+                OR
+                end_date = (
+                    SELECT MAX(end_date)
+                    FROM periods AS p2
+                    WHERE p2.company_id = periods.company_id
+                    AND DATE_PART('year', p2.end_date) = DATE_PART('year', periods.end_date)
+                    AND DATE_PART('year', fiscal_year_end) = {date.year}
+                )
+            );
+            """
+            cursor.execute(period_ids_query)
+            dates = cursor.fetchall()
+            date_1 = timezone.datetime.strptime(str(dates[0][0]), '%Y-%m-%d').date()
+            date_2 = timezone.datetime.strptime(str(dates[0][1]), '%Y-%m-%d').date()
+            days = date_1 - date_2
     if omzet == 0:
-        return "De omzet is nul dus kan dit niet berekent worden"
-    return (handelsvorderingen / omzet) * 365
+        return "De omzet is nul dus kan dit niet berekend worden"
+    return (handelsvorderingen / omzet) * days

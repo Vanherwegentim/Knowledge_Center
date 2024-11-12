@@ -35,9 +35,9 @@ calculations = {
     'EBITDA marge': bereken_EBITDA_marge,
     'afschrijvingen': bereken_afschrijvingen,
     'EBIT': bereken_EBIT,
-    'Netto financiele schuld': bereken_netto_financiele_schuld,
+    'netto financiele schuld': bereken_netto_financiele_schuld,
     'handelsvorderingen': bereken_handelsvorderingen,
-    'DSO': bereken_dso,
+    'dso': bereken_dso,
 }
 
 
@@ -46,7 +46,7 @@ def bereken(what: str, company_id: int, date: str):
     Voert een specifieke berekening uit voor een bedrijf in een bepaalde periode.
 
     Args:
-        what (str): Het type berekening (bijv. EBITDA, verlies, balanstotaal, eigen vermogen, etc.).
+        what (str): Het type berekening (EBITDA, verlies, balanstotaal, eigen vermogen, voorzieningen, handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
         company_id (int): De ID van het bedrijf. Gebruik de companies_ids_api_call-tool om de ID te verkrijgen als je alleen de bedrijfsnaam hebt.
         date (str): Einddatum van de periode in "YYYY-MM-DD" formaat.
 

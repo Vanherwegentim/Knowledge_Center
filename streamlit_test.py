@@ -303,7 +303,7 @@ if st.session_state["active_section"] == "Chatbot":
                         mess = agent.stream_chat(prompt)
                         
                     except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again later."
+                        response = "Sorry, there was an error processing your request. Please try again."
                         st.error("Error in agent response: " + str(e))
                 response = st.write_stream(mess.response_gen)
                 st.session_state.messages.append({"role": "assistant", "content": response})
@@ -313,13 +313,13 @@ if st.session_state["active_section"] == "Chatbot":
                     try:
                         mess = agent.stream_chat(st.session_state.messages[-1]["content"])
                     except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again later."
+                        response = "Sorry, there was an error processing your request. Please try again."
                         st.error("Error in agent response: " + str(e))
                 response = st.write_stream(mess.response_gen)
                 st.session_state.messages.append({"role": "assistant", "content": response})
             
     except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again later."
+                        response = "Sorry, there was an error processing your request. Please try again."
                         st.error("Error in agent response: " + str(e))
 
 
