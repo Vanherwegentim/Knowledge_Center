@@ -41,30 +41,29 @@ calculations = {
 }
 
 
-def bereken(what:str, company_id:int, date:str):
-        '''
-        Maakt een specifieke berekening van een bedrijf voor een bepaalde periode
-        als je de company_id niet hebt maar wel de company naam, haal de id dan eerst uit de companies_ids_api_call tool. VRAAG NIET ACHTER DE ID.
-        
+def bereken(what: str, company_id: int, date: str):
+    """
+    Voert een specifieke berekening uit voor een bedrijf in een bepaalde periode.
 
-        Vereiste:
-            - what (str): Het soort berekening dat gemaakt moet worden. Map indien mogelijk naar een van volgende woorden (EBITDA, verlies, balanstotaal, eigen vermogenm voorzieningen, 
-            handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, DSO)
-            - De company_id van het bedrijf, als je deze niet hebt maar wel de company naam, haal de id dan eerst uit de companies_ids_api_call tool. VRAAG NIET ACHTER DE ID.
-            - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+    Args:
+        what (str): Het type berekening (bijv. EBITDA, verlies, balanstotaal, eigen vermogen, etc.).
+        company_id (int): De ID van het bedrijf. Gebruik de companies_ids_api_call-tool om de ID te verkrijgen als je alleen de bedrijfsnaam hebt.
+        date (str): Einddatum van de periode in "YYYY-MM-DD" formaat.
 
-        Retourneert:
-            - De uitkomst van de berekening
-        
-        '''
-        
-        #TODO: Match potential synonyms/typos to keys in calculations. (use cosine similarity or LLM)
-        #Alternative: custom workflow with retry
-        
-        if what in calculations:
-            return calculations[what](company_id, date)
-        
-        return f"""'Cannot perform the calculation for {what}. Currently only the following calculations are supported: {list(calculations.keys())}'"""
+    Returns:
+        float: Het resultaat van de berekening.
+
+    Foutafhandeling:
+        Geeft een foutbericht als het gevraagde type berekening niet wordt ondersteund.
+    """
+    
+    # TODO: Vergelijk mogelijke synoniemen/typefouten met sleutelwoorden in calculations (gebruik cosine similarity of LLM).
+    
+    if what in calculations:
+        return calculations[what](company_id, date)
+    
+    return f"Kan de berekening voor '{what}' niet uitvoeren. Alleen de volgende berekeningen worden ondersteund: {list(calculations.keys())}"
+
 
 def vergelijk_op_basis_van(what:str, date:str, limit:int=10, order_by:str="DESC"):
     """
