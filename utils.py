@@ -15,7 +15,7 @@ def get_db_connection() -> psycopg2._psycopg.connection:
     )
 
 
-def get_period_ids(cursor:cursor, company_id:int, date:str):
+def get_period_ids(cursor: cursor, company_id: int, date: str):
     try:
         date = timezone.datetime.fromisoformat(date)
         period_ids_query = f"""
@@ -36,22 +36,24 @@ def get_period_ids(cursor:cursor, company_id:int, date:str):
         """
         cursor.execute(period_ids_query)
         period_ids = cursor.fetchall()
-        
+
         # Logical check if no period is found
         if len(period_ids) == 0:
             return "Dit bedrijf heeft geen periode tijdens deze datum"
-        
+
         return period_ids[0][0]
-    
+
     except Exception as e:
         # Handle exceptions like database connectivity issues, SQL errors, etc.
         return f"Er is een fout opgetreden: {str(e)}"
 
 
-def get_acount_details_by_account_number(cursor: cursor, company_id: int, period_id: int, number_filter: list[int]):
-    
-    number_filter_str = '%|'.join([str(i) for i in number_filter])
-    number_filter_str += '%'
+def get_acount_details_by_account_number(
+    cursor: cursor, company_id: int, period_id: int, number_filter: list[int]
+):
+
+    number_filter_str = "%|".join([str(i) for i in number_filter])
+    number_filter_str += "%"
     print(number_filter_str)
     sql = f"""SELECT value
                 FROM account_details

@@ -10,7 +10,8 @@ from utils import (
     get_period_ids,
 )
 
-#cursor = conn.cursor()
+# cursor = conn.cursor()
+
 
 def multiply(a: float, b: float) -> float:
     """Multiply two numbers and returns the product"""
@@ -20,6 +21,7 @@ def multiply(a: float, b: float) -> float:
 def add(a: float, b: float) -> float:
     """Add two numbers and returns the sum"""
     return a + b
+
 
 def account_api_call(company_id: str, page: int = 1, page_size: int = 100):
     """
@@ -33,23 +35,29 @@ def account_api_call(company_id: str, page: int = 1, page_size: int = 100):
     Retourneert:
     - Een lijst met accountdossiers voor de opgegeven pagina, of een foutmelding als het bedrijf niet bestaat of geen accounts heeft.
     """
-    with open("silverfin_api_static_db/accounts.json", 'r') as file:
+    with open("silverfin_api_static_db/accounts.json", "r") as file:
         accounts = json.load(file)
-    
+
     # Get the accounts for the specified company
-    company_accounts = accounts.get(str(company_id), "Geen accounts gevonden voor het opgegeven bedrijf.")
-    
+    company_accounts = accounts.get(
+        str(company_id), "Geen accounts gevonden voor het opgegeven bedrijf."
+    )
+
     if isinstance(company_accounts, str):  # If the result is the error message
         return company_accounts
-    
+
     # Calculate the start and end indices for pagination
     start_index = (page - 1) * page_size
     end_index = start_index + page_size
-    
+
     # Return the paginated results
     paginated_accounts = company_accounts[start_index:end_index]
-    
-    return paginated_accounts if paginated_accounts else "Geen meer accounts voor deze pagina."
+
+    return (
+        paginated_accounts
+        if paginated_accounts
+        else "Geen meer accounts voor deze pagina."
+    )
 
 
 def company_api_call(company_id: str):
@@ -61,12 +69,13 @@ def company_api_call(company_id: str):
     Retourneert:
     - Een dictionary met bedrijfsinformatie als het bedrijf wordt gevonden, of een foutmelding als het bedrijf niet bestaat.
     """
-    with open("silverfin_api_static_db/companies.json", 'r') as file:
+    with open("silverfin_api_static_db/companies.json", "r") as file:
         companies = json.load(file)
 
     if companies[company_id]:
         return companies[company_id]
     return "Geen bedrijf gevonden met de opgegeven company_id."
+
 
 def companies_ids_api_call(keywords: list = None):
     """
@@ -88,16 +97,14 @@ def companies_ids_api_call(keywords: list = None):
     # Filter results based on keywords
     if keywords:
         filtered_result = [
-            (company_id, name) for company_id, name in result
+            (company_id, name)
+            for company_id, name in result
             if any(keyword.lower() in name.lower() for keyword in keywords)
         ]
     else:
         filtered_result = result
 
     return filtered_result
-
-
-
 
 
 def period_api_call(company_id: int, page: int = 1, page_size: int = 100):
@@ -112,29 +119,37 @@ def period_api_call(company_id: int, page: int = 1, page_size: int = 100):
     Retourneert:
     - Een lijst met periodes die horen bij het opgegeven bedrijf voor de opgegeven pagina.
     """
-    with open("silverfin_api_static_db/periods.json", 'r') as file:
+    with open("silverfin_api_static_db/periods.json", "r") as file:
         periods = json.load(file)
 
     # Get the periods for the specified company
-    company_periods = periods.get(str(company_id), "Geen periodes gevonden voor het opgegeven bedrijf.")
-    
+    company_periods = periods.get(
+        str(company_id), "Geen periodes gevonden voor het opgegeven bedrijf."
+    )
+
     if isinstance(company_periods, str):  # If the result is an error message
         return company_periods
 
     # Calculate the start and end indices for pagination
     start_index = (page - 1) * page_size
     end_index = start_index + page_size
-    
+
     # Return the paginated results
     paginated_periods = company_periods[start_index:end_index]
-    
-    return paginated_periods if paginated_periods else "Geen meer periodes voor deze pagina."
 
-def company_id_to_name_converter(company_id:int):
-    with open("silverfin_api_static_db/company_ids.json", 'r') as file:
+    return (
+        paginated_periods
+        if paginated_periods
+        else "Geen meer periodes voor deze pagina."
+    )
+
+
+def company_id_to_name_converter(company_id: int):
+    with open("silverfin_api_static_db/company_ids.json", "r") as file:
         companies = json.load(file)
         return companies[str(company_id)]
-     
+
+
 def has_tax_decreased_api_call(company_id: int, date: str):
     """
     Haalt het belastingpercentage op voor een bedrijf op een specifieke datum. Als het 20% dan is het een verlaagd tarief. Als het 25% is dan is het een normaal tarief.
@@ -146,13 +161,12 @@ def has_tax_decreased_api_call(company_id: int, date: str):
     Raises:
         ValueError: Als company_id of date ontbreekt of ongeldig is.
     """
-    
+
     if not company_id:
         raise ValueError("company_id is vereist en mag niet leeg zijn.")
     if not date:
         raise ValueError("date is vereist en moet in het 'YYYY-MM-DD'-formaat zijn.")
-    
-    
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor, company_id, date)
@@ -173,10 +187,11 @@ def get_date():
     A function to return todays date.
     Call this before any other functions if you are unaware of the current date
     """
-    return datetime.date.today()       
+    return datetime.date.today()
 
-def period_id_fetcher(date:str, company_id:int):
-    '''
+
+def period_id_fetcher(date: str, company_id: int):
+    """
     Geeft een lijst van perioden terug die eindigen op een bepaalde datum
 
     Vereist:
@@ -185,7 +200,7 @@ def period_id_fetcher(date:str, company_id:int):
 
     Retourneert:
     - Een lijst met periode ids die eindigen op de vooropgestelde datum
-    '''
+    """
     date = timezone.datetime.fromisoformat(date)
     period_ids = f"""
         SELECT period_id
@@ -203,7 +218,7 @@ def period_id_fetcher(date:str, company_id:int):
             )
         );
     """
-    
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(period_ids)
@@ -215,53 +230,51 @@ def period_id_fetcher(date:str, company_id:int):
 
 def account_details(company_id: int = 0, period_id: int = 0, account_id: int = 0):
     """
-    Geeft een lijst van accountdetails terug afhankelijk van de company_id, period_id of account_id. 
+    Geeft een lijst van accountdetails terug afhankelijk van de company_id, period_id of account_id.
     Opmerking: Niet voor berekeningen zoals EBITDA of eigen vermogen.
-    
+
     Args:
         company_id (int): De unieke ID van het bedrijf. Vul alleen deze in voor bedrijfsspecifieke details.
         period_id (int): De unieke ID van de periode. Vul alleen deze in voor periodespecifieke details.
         account_id (int): De unieke ID van de account. Vul alleen deze in voor account specifieke details.
 
     Returns:
-        list: Lijst met accountdetails, waaronder company_id, period_id, account_id, account_name, account_number, 
-              number_without_suffix, original_name, original_number, account_type, reconciliation_template_id, 
+        list: Lijst met accountdetails, waaronder company_id, period_id, account_id, account_name, account_number,
+              number_without_suffix, original_name, original_number, account_type, reconciliation_template_id,
               value en starred. 'Value' vertegenwoordigt de waarde van het account en is belangrijk bij winst/verliesvragen.
     """
-    
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             if company_id != 0:
                 sql = f"""SELECT * FROM account_details WHERE account_details.company_id = {company_id}"""
                 cursor.execute(sql)
                 return cursor.fetchall()
-            
+
             elif period_id != 0:
                 sql = f"""SELECT * FROM account_details WHERE account_details.period_id = {period_id}"""
                 cursor.execute(sql)
                 return cursor.fetchall()
-            
+
             elif account_id != 0:
                 sql = f"""SELECT * FROM account_details WHERE account_details.account_id = {account_id}"""
                 cursor.execute(sql)
                 return cursor.fetchall()
 
 
+def reconciliation_api_call(company_id: int, date: str):
+    """
+    Deze tool geeft de reconiliation ids en namen terug van reconiliations van het gegeven bedrijf en datum.
+
+    Vereiste:
+        - company_id (int): De company_id van het bedrijf
+        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
 
 
-def reconciliation_api_call(company_id:int, date:str):
-    '''
-        Deze tool geeft de reconiliation ids en namen terug van reconiliations van het gegeven bedrijf en datum.
+    Retourneert:
+        - reconiliation ids en namen terug van reconiliations van het gegeven bedrijf en datum.
 
-        Vereiste:
-            - company_id (int): De company_id van het bedrijf
-            - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
-
-
-        Retourneert:
-            - reconiliation ids en namen terug van reconiliations van het gegeven bedrijf en datum.
-    
-        '''
+    """
     date = timezone.datetime.fromisoformat(date)
     period_ids = f"""
             SELECT period_id
@@ -279,7 +292,7 @@ def reconciliation_api_call(company_id:int, date:str):
                 )
             );
         """
-        
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(period_ids)
@@ -295,6 +308,7 @@ def reconciliation_api_call(company_id:int, date:str):
             cursor.execute(sql)
             records = cursor.fetchall()
             return records
+
 
 def list_tables():
     """
@@ -341,5 +355,3 @@ def load_data(sql_query: str):
             cursor.execute(sql_query)
             result = cursor.fetchall()
     return result
-
-
