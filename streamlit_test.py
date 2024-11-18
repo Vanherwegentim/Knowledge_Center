@@ -12,7 +12,8 @@ from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import VectorStoreIndex
 from llama_index.core.tools import FunctionTool, QueryEngineTool
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
-
+from bot_queries.queries import group_ebitda, voorafbetaling
+import pandas as pd
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
     OpenAIEmbeddingMode,
@@ -43,8 +44,6 @@ st.set_page_config(
     page_title="Fintrax Knowledge Center",
     page_icon="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png",
 )
-
-# Load tools
 
 
 # Set up OpenAI client
@@ -123,6 +122,8 @@ Je bent een vertrouwde financiële expert in België die het personeel van het b
 
 - Schrijf in helder en professioneel Nederlands, met de juiste terminologie.
 
+- Het is goed om te weten dat dossiers en bedrijven hetzelfde worden gezien in de database functies. Dus als iemand vraagt achter een dossier met een naam dan gaat het eigenlijk over een bedrijf. Een dossier is een company in de database
+
 """
 
 
@@ -154,51 +155,117 @@ budget_tool = QueryEngineTool.from_defaults(
 )
 
 
-@st.cache_resource
-def load_tools():
-    multiply_tool = FunctionTool.from_defaults(fn=multiply)
-    add_tool = FunctionTool.from_defaults(fn=add)
-    company_tool = FunctionTool.from_defaults(fn=company_api_call)
-    companies_tool = FunctionTool.from_defaults(fn=companies_ids_api_call)
-    tarief_tax_tool = FunctionTool.from_defaults(fn=has_tax_decreased_api_call)
-    period_tool = FunctionTool.from_defaults(fn=period_id_fetcher)
-    account_tool = FunctionTool.from_defaults(fn=account_details)
-    reconciliation_tool = FunctionTool.from_defaults(fn=reconciliation_api_call)
-    list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
-    describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
-    load_data_tool = FunctionTool.from_defaults(fn=load_data)
-    vergelijk_op_basis_van_tool = FunctionTool.from_defaults(vergelijk_op_basis_van)
-    bereken_tool = FunctionTool.from_defaults(bereken)
-    get_datum_tool = FunctionTool.from_defaults(get_date)
+# @st.cache_resource
+# def load_tools():
+#     multiply_tool = FunctionTool.from_defaults(fn=multiply)
+#     add_tool = FunctionTool.from_defaults(fn=add)
+#     company_tool = FunctionTool.from_defaults(fn=company_api_call)
+#     companies_tool = FunctionTool.from_defaults(fn=companies_ids_api_call)
+#     tarief_tax_tool = FunctionTool.from_defaults(fn=has_tax_decreased_api_call)
+#     period_tool = FunctionTool.from_defaults(fn=period_id_fetcher)
+#     account_tool = FunctionTool.from_defaults(fn=account_details)
+#     reconciliation_tool = FunctionTool.from_defaults(fn=reconciliation_api_call)
+#     list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
+#     describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
+#     load_data_tool = FunctionTool.from_defaults(fn=load_data)
+#     vergelijk_op_basis_van_tool = FunctionTool.from_defaults(vergelijk_op_basis_van)
+#     bereken_tool = FunctionTool.from_defaults(bereken)
+#     get_datum_tool = FunctionTool.from_defaults(get_date)
 
-    return [
-        reconciliation_tool,
-        budget_tool,
-        tarief_tax_tool,
-        companies_tool,
-        account_tool,
-        period_tool,
-        company_tool,
-        # EBITDA_tool,
-        list_tables_tool,
-        describe_tables_tool,
-        load_data_tool,
-        # balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
-        # voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
-        bereken_tool,
-        vergelijk_op_basis_van_tool,
-        get_datum_tool,
-    ]
+#     return [
+#         reconciliation_tool,
+#         budget_tool,
+#         tarief_tax_tool,
+#         companies_tool,
+#         account_tool,
+#         period_tool,
+#         company_tool,
+#         # EBITDA_tool,
+#         list_tables_tool,
+#         describe_tables_tool,
+#         load_data_tool,
+#         # balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
+#         # voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
+#         bereken_tool,
+#         vergelijk_op_basis_van_tool,
+#         get_datum_tool,
+#     ]
 
 
-tools = load_tools()
+from utils import (
+    get_db_connection,
+)
+def list_tables():
+    """
+    Geeft een lijst van alle tabellen in het schema.
+    Returns:
+        list: Lijst van tabelnamen in het 'public' schema.
+    """
+    sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            result = cursor.fetchall()
+    return result
 
+
+def describe_tables(table_name: str):
+    """
+    Geeft de kolomnamen en datatypes van de opgegeven tabel.
+    Args:
+        table_name (str): Naam van de tabel om te beschrijven.
+    Returns:
+        list: Lijst van kolomnamen en hun datatypes voor de opgegeven tabel.
+    """
+    sql = f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table_name}'"
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            result = cursor.fetchall()
+    return result
+
+
+if "data" not in st.session_state:
+    st.session_state.data = None
+
+def load_data(sql_query: str):
+    """
+    Voert een SQL-query uit en retourneert het resultaat. Het resultaat kan groter zijn dan jouw context window dus krijg jij een preview van de data terwijl de volledige data naast jouw antwoord wordt getoond in een pandas dataframe. Je hoeft je resultaat niet te tonen, enkel herkennen dat de functie succesvol. Jij krijgt een preview zodat als er vragen zijn jij die veranderen kan doorvoeren.
+    Args:
+        sql_query (str): De SQL-query om uit te voeren.
+    Returns:
+        
+    Opmerking:
+        Gebruik eerst de functies list_tables en describe_tables voor context.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql_query)
+            result = cursor.fetchall()
+            full_df = pd.DataFrame(result)
+            st.session_state.data = full_df
+            st.session_state.data.columns =[ x[0] for x in cursor.description ]
+            return "Het volgende is een preview van data, de user krijgt de hele data te zien. Jij, de chatbot krijgt een deel omdat er anders het risico is om jou context window te overflowen. Vermeld in je antwoord dat jij een preview hebt van de data en de volledige data rechts van de chat te vinden is!" +  str(full_df.head(1))
+
+# def chart():
+#     """Creates a chart based on the data. Use this tool when a user requests a chart"""
+#     st.session_state.agent = True
+#     return "Succesfully created chart"
+
+
+# tools = load_tools()
+list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
+describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
+load_data_tool = FunctionTool.from_defaults(fn=load_data)
+group_ebitda_tool = FunctionTool.from_defaults(fn=group_ebitda)
+voorafbetaling_tool = FunctionTool.from_defaults(fn=voorafbetaling)
+# chart_tool = FunctionTool.from_defaults(fn=chart)
 
 def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
     buffer = ChatMemoryBuffer(token_limit=300)
     agent = OpenAIAgent.from_tools(
-        tools, verbose=True, llm=llm, system_prompt=system_prompt, memory_cls=buffer
+        [list_tables_tool, describe_tables_tool, load_data_tool, group_ebitda_tool, budget_tool, voorafbetaling_tool ], verbose=True, llm=llm, system_prompt=system_prompt, memory_cls=buffer
     )
     return agent
 
@@ -247,7 +314,7 @@ if (
 
 
 col1, col2, col3 = st.sidebar.columns([1, 6, 1])
-col2.image("images/vgd2.webp")
+col2.image("images/blauw_logo_and_text_zonder_padding.png")
 
 firestore_string = st.secrets["FIRESTORE"]
 firestore_cred = json.loads(firestore_string)
@@ -337,6 +404,10 @@ if (
 
 if st.session_state["active_section"] == "Chatbot":
     st.title("Knowledge Center")
+    col1, col2 = st.columns([1,1])
+    col2.dataframe(st.session_state.data, use_container_width=True, height=500)
+    # if "chart"  in st.session_state:
+    #     col2.line_chart(st.session_state.data)
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
     if "openai_model" not in st.session_state:
@@ -349,48 +420,54 @@ if st.session_state["active_section"] == "Chatbot":
                 "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!",
             }
         ]
-
+    colcon1 = col1.container(height=500)
     for message in st.session_state.messages:
         if message["role"] != "system":
             if message["role"] == "assistant":
-                with st.chat_message(message["role"], avatar="images/vgd_logo3.jpeg"):
+                with colcon1.chat_message(message["role"], avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
                     st.markdown(message["content"])
             else:
-                with st.chat_message(message["role"]):
+                with colcon1.chat_message(message["role"]):
                     st.markdown(message["content"])
     try:
         prompt = st.chat_input("Stel hier je vraag!", key="real_chat_input")
         if prompt:
             st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
+            with col1.container():
+                with colcon1.chat_message("user"):
+                    st.markdown(prompt)
+            with col1.container():
+                with colcon1.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                    with st.spinner("Thinking..."):
+                        try:
+                            mess = agent.stream_chat(prompt)
 
-            with st.chat_message("assistant", avatar="images/vgd_logo3.jpeg"):
-                with st.spinner("Thinking..."):
-                    try:
-                        mess = agent.stream_chat(prompt)
-
-                    except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again."
-                        st.error("Error in agent response: " + str(e))
-                response = st.write_stream(mess.response_gen)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response}
-                )
-        if st.session_state.messages[-1]["role"] == "user":
-            with st.chat_message("assistant", avatar="images/vgd_logo3.jpeg"):
-                with st.spinner("Thinking..."):
-                    try:
-                        mess = agent.stream_chat(
-                            st.session_state.messages[-1]["content"]
+                        except Exception as e:
+                            response = "Sorry, there was an error processing your request. Please try again."
+                            st.error("Error in agent response: " + str(e))
+                    response = st.write_stream(mess.response_gen)
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": response}
+                    )
+                    time.sleep(0.5)
+                    st.rerun()
+            if st.session_state.messages[-1]["role"] == "user":
+                with colcon1.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                    with colcon1.spinner("Thinking..."):
+                        try:
+                            mess = agent.stream_chat(
+                                st.session_state.messages[-1]["content"]
+                            )
+                        except Exception as e:
+                            response = "Sorry, there was an error processing your request. Please try again."
+                            st.error("Error in agent response: " + str(e))
+                        response = st.write_stream(mess.response_gen)
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": response}
                         )
-                    except Exception as e:
-                        response = "Sorry, there was an error processing your request. Please try again."
-                        st.error("Error in agent response: " + str(e))
-                response = st.write_stream(mess.response_gen)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response}
-                )
+                        time.sleep(0.5)
+                        st.rerun()
+
 
     except Exception as e:
         response = (
