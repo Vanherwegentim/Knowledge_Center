@@ -109,6 +109,8 @@ Je bent een vertrouwde financiële expert in België die het personeel van het b
 
 - **Gebruik altijd de tool 'Financiele_informatie' om informatie op te halen voor elke vraag.** Baseer je antwoorden uitsluitend op informatie uit deze tool.
 
+- Als er codes in de context staan, zet deze dan zeker in je antwoord.
+
 - Als de vraag betrekking heeft op specifieke codes, vakken of financiële tools, leg dan de focus op het uitleggen van die items.
 
 - **Vermijd het gebruik van zinnen zoals "volgens de passage" of "volgens de context" in je antwoord.**
@@ -331,7 +333,6 @@ if "state_dict" not in st.session_state:
 
 with st.sidebar.container():
     sidecol1, sidecol2, sidecode3 = st.columns(3)
-    sidecol2.title("Acties")
 
     chatbot_button = st.button(
         "Knowledge Center", use_container_width=True, on_click=popup
