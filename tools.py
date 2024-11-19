@@ -152,7 +152,7 @@ def company_id_to_name_converter(company_id: int):
 
 def has_tax_decreased_api_call(company_id: int, date: str):
     """
-    Haalt het belastingpercentage op voor een bedrijf op een specifieke datum. Als het 20% dan is het een verlaagd tarief. Als het 25% is dan is het een normaal tarief.
+    Geeft de SQL-query terug om het belastingpercentage op te halen voor een bedrijf op een specifieke datum. Als het 20% dan is het een verlaagd tarief. Als het 25% is dan is het een normaal tarief.
     Args:
         company_id (int): Unieke identificatie van het bedrijf, bijv. 12345.
         date (str): Datum in "YYYY-MM-DD"-formaat, bijv. "2023-12-31".
@@ -168,18 +168,26 @@ def has_tax_decreased_api_call(company_id: int, date: str):
         raise ValueError("date is vereist en moet in het 'YYYY-MM-DD'-formaat zijn.")
 
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor() as cursor: 
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):
                 return period_id
-            sql = f"""SELECT tax_percentage
+    return f"""SELECT tax_percentage
               FROM reconciliation_results
               WHERE company_id = {company_id} and period_id = {period_id}"""
-            cursor.execute(sql)
-            tax_percentage = cursor.fetchall()
-            if len(tax_percentage) == 0:
-                return "Er is geen reconciliation voor deze periode"
-    return tax_percentage
+    # with get_db_connection() as conn:
+    #     with conn.cursor() as cursor:
+    #         period_id = get_period_ids(cursor, company_id, date)
+    #         if isinstance(period_id, str):
+    #             return period_id
+    #         sql = f"""SELECT tax_percentage
+    #           FROM reconciliation_results
+    #           WHERE company_id = {company_id} and period_id = {period_id}"""
+    #         cursor.execute(sql)
+    #         tax_percentage = cursor.fetchall()
+    #         if len(tax_percentage) == 0:
+    #             return "Er is geen reconciliation voor deze periode"
+    # return tax_percentage
 
 
 def get_date():
@@ -192,7 +200,7 @@ def get_date():
 
 def period_id_fetcher(date: str, company_id: int):
     """
-    Geeft een lijst van perioden terug die eindigen op een bepaalde datum
+    Geeft de SQL-query terug om een lijst van perioden op te halen die eindigen op een bepaalde datum
 
     Vereist:
     - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -218,14 +226,14 @@ def period_id_fetcher(date: str, company_id: int):
             )
         );
     """
-
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(period_ids)
-            period_ids = cursor.fetchall()
-    if len(period_ids) == 0:
-        return "Dit bedrijf heeft geen periode tijdens deze datum"
     return period_ids
+    # with get_db_connection() as conn:
+    #     with conn.cursor() as cursor:
+    #         cursor.execute(period_ids)
+    #         period_ids = cursor.fetchall()
+    # if len(period_ids) == 0:
+    #     return "Dit bedrijf heeft geen periode tijdens deze datum"
+    # return period_ids
 
 
 def account_details(company_id: int = 0, period_id: int = 0, account_id: int = 0):

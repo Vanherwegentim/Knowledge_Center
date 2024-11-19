@@ -17,9 +17,9 @@ from .calculations import (
     bereken_voorzieningen,
 )
 from utils import get_db_connection
-
 from django.utils import timezone
-
+import streamlit as st
+import pandas as pd
 calculations = {
     "EBITDA": bereken_EBITDA,
     "verlies": bereken_VERLIES,
@@ -39,6 +39,24 @@ calculations = {
     "dso": bereken_dso,
 }
 
+def load_data(sql_query: str):
+    """
+    Voert een SQL-query uit en retourneert het resultaat. Het resultaat kan groter zijn dan jouw context window dus krijg jij een preview van de data terwijl de volledige data naast jouw antwoord wordt getoond in een pandas dataframe. Je hoeft je resultaat niet te tonen, enkel herkennen dat de functie succesvol. Jij krijgt een preview zodat als er vragen zijn jij die veranderen kan doorvoeren.
+    Args:
+        sql_query (str): De SQL-query om uit te voeren.
+    Returns:
+        
+    Opmerking:
+        Gebruik eerst de functies list_tables en describe_tables voor context.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql_query)
+            result = cursor.fetchall()
+            full_df = pd.DataFrame(result)
+            st.session_state.data = full_df
+            st.session_state.data.columns =[ x[0] for x in cursor.description ]
+            return "Het volgende is een preview van data, de user krijgt de hele data te zien. Jij, de chatbot krijgt een deel omdat er anders het risico is om jou context window te overflowen. Vermeld in je antwoord dat jij een preview hebt van de data en de volledige data rechts van de chat te vinden is!" +  str(full_df.head(1))
 
 def bereken(what: str, company_id: int, date: str):
     """
@@ -559,8 +577,7 @@ def vergelijk_op_basis_van(
                 LIMIT {limit};
                 """
 
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(sql)
-            results = cursor.fetchall()
-            return results
+    return load_data(sql)
+
+
+
