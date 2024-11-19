@@ -10,7 +10,7 @@ from utils import (
 
 def bereken_EBITDA(company_id: int, date: str):
     """
-    Deze tool berekent de EBITDA van een bedrijf
+    Deze tool geeft de SQL-query terug om de ebitda te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Vereiste:
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
         - De company_id van het bedrijf
@@ -27,58 +27,24 @@ def bereken_EBITDA(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            sql = f"""SELECT *
+            sql = f"""SELECT sum(value)*-1 as EBITDA
                     FROM account_details
                     WHERE 
                         company_id = {company_id} AND
                         account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%' AND
                         period_id = {period_id};
                     """
-            cursor.execute(sql)
-            records = cursor.fetchall()
-            gain = sum([float(record[10]) for record in records])
-            result = gain * -1
-            return result
+            # cursor.execute(sql)
+            # records = cursor.fetchall()
+            # gain = sum([float(record[10]) for record in records])
+            # result = gain * -1
+            return sql
 
-
-def bereken_OMZET(company_id: int, date: str):
-    """
-    Deze tool berekent de OMZET van een bedrijf
-
-    Vereiste:
-        - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
-        - De company_id van het bedrijf
-
-    Retourneert:
-        - De OMZET
-
-    Details:
-    De omzet van uw bedrijf is het totale bedrag aan inkomsten uit de verkoop van producten en diensten in een bepaalde periode. Dit wordt ook wel de bruto-omzet genoemd.
-    """
-    date = timezone.datetime.fromisoformat(date)
-
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            period_id = get_period_ids(cursor, company_id, date)
-            if isinstance(period_id, str):  # If the result is the error message
-                return period_id
-            sql = f"""SELECT *
-                FROM account_details
-                WHERE 
-                    company_id = {company_id} AND
-                    account_number SIMILAR TO '70%' AND
-                    period_id = {period_id};
-                """
-            cursor.execute(sql)
-            records = cursor.fetchall()
-            gain = sum([float(record[10]) for record in records])
-            result = gain * -1
-            return result
 
 
 def bereken_VERLIES(company_id: int, date: str):
     """
-    Deze tool berekent het VERLIES van een bedrijf
+    Deze tool geeft de SQL-query terug om het verlies te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -96,24 +62,23 @@ def bereken_VERLIES(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            sql = f"""SELECT *
+            sql = f"""SELECT sum(value)*-1 as Verlies
                 FROM account_details
                 WHERE 
                     company_id = {company_id} AND
                     account_number SIMILAR TO '60%|61%|62%|63%|64%|65%|66%|67%|68%|70%|71%|72%|73%|74%|75%|76%|77%|78%' AND
                     period_id = {period_id};
                 """
-            cursor.execute(sql)
-            records = cursor.fetchall()
-            gain = sum([float(record[10]) for record in records])
-            result = gain * -1
-            return result
+            # cursor.execute(sql)
+            # records = cursor.fetchall()
+            # gain = sum([float(record[10]) for record in records])
+            # result = gain * -1
+            return sql
 
 
 def bereken_balanstotaal(company_id: int, date: str):
     """
-    Berekent het balanstotaal van een bedrijf
-
+    Deze tool geeft de SQL-query terug om het balanstotaal te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Vereiste:
         - De company_id van het bedrijf
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -130,23 +95,22 @@ def bereken_balanstotaal(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            sql = f"""SELECT value
+            sql = f"""SELECT sum(value)*-1 as Balanstotaal
                     FROM account_details
                     WHERE 
                         company_id = {company_id} AND
                         account_type = '{AccountType.ASSET}' AND
                         period_id = {period_id};
                     """
-            cursor.execute(sql)
-            records = cursor.fetchall()
-            result = sum([float(record[0]) for record in records])
-            return result
+            # cursor.execute(sql)
+            # records = cursor.fetchall()
+            # result = sum([float(record[0]) for record in records])
+            return sql
 
 
 def bereken_eigen_vermogen(company_id: int, date: str):
     """
-    Berekent het eigen vermogen van een bedrijf
-
+    Deze tool geeft de SQL-query terug om het eigen vermogen te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Vereiste:
         - De company_id van het bedrijf
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -160,16 +124,25 @@ def bereken_eigen_vermogen(company_id: int, date: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor, company_id, date)
-            records = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [10, 11, 12, 13, 14, 15]
-            )
-            result = sum([float(record[0]) for record in records])
-            return result
+            if isinstance(period_id, str):  # If the result is the error message
+                return period_id
+            sql = f"""SELECT sum(value)*-1 as Eigen_vermogen
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '10%|11%|12%|13%|14%|15%' AND
+                    period_id = {period_id};
+                """
+            # records = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [10, 11, 12, 13, 14, 15]
+            # )
+            # result = sum([float(record[0]) for record in records])
+            return sql
 
 
 def bereken_voorzieningen(company_id: int, date: str):
     """
-    Berekent de voorzieningen van een bedrijf
+    Deze tool geeft de SQL-query terug om de voorzieningen te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -186,18 +159,24 @@ def bereken_voorzieningen(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [16]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [16]
+            # )
 
-            result = sum([float(record[0]) for record in additives])
-            return result
+            # result = sum([float(record[0]) for record in additives])
+            sql = f"""SELECT sum(value)*-1 as Voorzieningen
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '16%' AND
+                    period_id = {period_id};
+                """
+            return sql
 
 
 def bereken_handelswerkkapitaal(company_id: int, date: str):
     """
-    Berekent het handelswerkkapitaal van een bedrijf
-
+    Deze tool geeft de SQL-query terug om de handelswerkkapitaal te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Vereiste:
         - De company_id van het bedrijf
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -213,22 +192,37 @@ def bereken_handelswerkkapitaal(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40]
-            )
-            negatives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [44]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [30, 31, 32, 33, 34, 35, 36, 37, 40]
+            # )
+            # negatives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [44]
+            # )
 
-            result = sum([float(record[0]) for record in additives]) - sum(
-                [float(record[0]) for record in negatives]
-            )
-            return result
+            # result = sum([float(record[0]) for record in additives]) - sum(
+            #     [float(record[0]) for record in negatives]
+            # )
+            sql = f"""SELECT 
+                            SUM(CASE WHEN account_number SIMILAR TO '30%|31%|32%|33%|34%|35%|36%|37%|40' 
+                                    THEN value 
+                                    ELSE 0 
+                                END) 
+                            - SUM(CASE WHEN account_number LIKE '44%' 
+                                    THEN value 
+                                    ELSE 0 
+                                END) AS handelswerkkapitaal
+                        FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    period_id = {period_id};
+
+                        """
+            return sql
 
 
 def bereken_financiele_schulden(company_id: int, date: str):
     """
-    Berekent de financiele schulden van een bedrijf
+    Deze tool geeft de SQL-query terug om de financiele schulden van een bedrijf te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -245,18 +239,25 @@ def bereken_financiele_schulden(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [16, 17, 42, 43]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [16, 17, 42, 43]
+            # )
 
-            result = sum([float(record[0]) for record in additives])
-            return result
+            # result = sum([float(record[0]) for record in additives])
+            sql = f"""
+                    SELECT sum(value)*-1 as Financiële_schulden
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '16%|17%|42%|43%' AND
+                    period_id = {period_id};
+            """
+            return sql
 
 
 def bereken_liquide_middelen(company_id: int, date: str):
     """
-    Berekent de financiele schulden van een bedrijf
-
+    Deze tool geeft de SQL-query terug om de liquide middelen van een bedrijf te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Vereiste:
         - De company_id van het bedrijf
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -272,17 +273,25 @@ def bereken_liquide_middelen(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [50, 51, 52, 53, 54, 55, 56, 57, 58]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [50, 51, 52, 53, 54, 55, 56, 57, 58]
+            # )
 
-            result = sum([float(record[0]) for record in additives])
-            return result
+            # result = sum([float(record[0]) for record in additives])
+            sql = f"""
+                    SELECT sum(value)*-1 as liquide_middelen
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '50%|51%|52%|53%|54%|55%|56%|57%|58%' AND
+                    period_id = {period_id};
+            """
+            return sql
 
 
 def bereken_bruto_marge(company_id: int, date: str):
     """
-    Berekent de bruto marge van een bedrijf
+    Deze tool geeft de SQL-query terug om het bruto marge van een bedrijf te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -299,49 +308,71 @@ def bereken_bruto_marge(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [70, 71, 72, 74]
-            )
-            negatives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [60]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [70, 71, 72, 74]
+            # )
+            # negatives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [60]
+            # )
 
-            result = sum([float(record[0]) for record in additives]) - sum(
-                [float(record[0]) for record in negatives]
-            )
-            return result
+            # result = sum([float(record[0]) for record in additives]) - sum(
+            #     [float(record[0]) for record in negatives]
+            # )
+            sql = f"""SELECT 
+                            SUM(CASE WHEN account_number SIMILAR TO '70%|71%|72%|74%' 
+                                    THEN value 
+                                    ELSE 0 
+                                END) 
+                            - SUM(CASE WHEN account_number LIKE '60%' 
+                                    THEN value 
+                                    ELSE 0 
+                                END) AS Bruto_marge
+                        FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    period_id = {period_id};
+
+                        """
+            return sql
 
 
 def bereken_omzet(company_id: int, date: str):
     """
-    Berekent de omzet van een bedrijf
+    Deze tool geeft de SQL-query terug om de omzet te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
-        - De company_id van het bedrijf
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
+        - De company_id van het bedrijf
 
     Retourneert:
-        - Het omzet
+        - De OMZET
 
     Details:
-    Het omzet is het totaalbedrag in een bepaalde periode van de verkopen door een bedrijf
+    De omzet van uw bedrijf is het totale bedrag aan inkomsten uit de verkoop van producten en diensten in een bepaalde periode. Dit wordt ook wel de bruto-omzet genoemd.
     """
+
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [70]
-            )
-
-            result = sum([float(record[0]) for record in additives])
-            return result
+            sql = f"""SELECT sum(value)*-1 as Omzet
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '70%' AND
+                    period_id = {period_id};
+                """
+            # cursor.execute(sql)
+            # records = cursor.fetchall()
+            # gain = sum([float(record[10]) for record in records])
+            # result = gain * -1
+            return sql
 
 
 def bereken_EBITDA_marge(company_id: int, date: str):
     """
-    Berekent de EBITDA marge van een bedrijf
+    Deze tool geeft de SQL-query terug om de EBITDA marge te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -353,14 +384,57 @@ def bereken_EBITDA_marge(company_id: int, date: str):
     Details:
     De EBITDA marge geeft aan hoeveel cash een bedrijf genereert voor elke euro omzet.
     """
-    ebitda = bereken_EBITDA(company_id, date)
-    omzet = bereken_omzet(company_id, date)
-    return ebitda / omzet
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_id = get_period_ids(cursor, company_id, date)
+            sql = f"""WITH 
+                    ebitda AS (
+                        SELECT 
+                            company_id,
+                            SUM(value) * -1 AS ebitda_value
+                        FROM account_details
+                        WHERE 
+                            company_id = {company_id} AND
+                            account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%' AND
+                            period_id = {period_id}
+                        GROUP BY company_id
+                    ),
+                    marge AS (
+                        SELECT 
+                            company_id,
+                            SUM(value) * -1 AS marge_value
+                        FROM account_details
+                        WHERE 
+                            company_id = {company_id} AND
+                            account_number SIMILAR TO '70%' AND
+                            period_id = {period_id}
+                        GROUP BY company_id
+                    )
+                SELECT 
+                    e.company_id,  
+                    m.marge_value, 
+                    CASE 
+                        WHEN m.marge_value <> 0 THEN e.ebitda_value / m.marge_value
+                        ELSE NULL 
+                    END AS ebitda_marge
+                FROM 
+                    ebitda e
+                JOIN 
+                    marge m 
+                ON 
+                    e.company_id = m.company_id;
+
+                            
+                            """
+    return sql
+    # ebitda = bereken_EBITDA(company_id, date)
+    # omzet = bereken_omzet(company_id, date)
+    # return ebitda / omzet
 
 
 def bereken_afschrijvingen(company_id: int, date: str):
     """
-    Berekent de afschrijvingen van een bedrijf
+    Deze tool geeft de SQL-query terug om de afschrijvingen te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -377,17 +451,24 @@ def bereken_afschrijvingen(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [63]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [63]
+            # )
 
-            result = sum([float(record[0]) for record in additives])
-            return result
+            # result = sum([float(record[0]) for record in additives])
+            sql = f"""SELECT sum(value)*-1 as Afschrijving
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '63%' AND
+                    period_id = {period_id};
+                """
+            return sql
 
 
 def bereken_EBIT(company_id: int, date: str):
     """
-    Berekent de EBITDA marge van een bedrijf
+    Deze tool geeft de SQL-query terug om de EBIT te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -399,14 +480,27 @@ def bereken_EBIT(company_id: int, date: str):
     Details:
     De EBITDA marge geeft aan hoeveel cash een bedrijf genereert voor elke euro omzet.
     """
-    ebitda = bereken_EBITDA(company_id, date)
-    afschrijvingen = bereken_afschrijvingen(company_id, date)
-    return ebitda + afschrijvingen
+    # ebitda = bereken_EBITDA(company_id, date)
+    # afschrijvingen = bereken_afschrijvingen(company_id, date)
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_id = get_period_ids(cursor, company_id, date)
+            if isinstance(period_id, str):  # If the result is the error message
+                return period_id
+    sql = f"""SELECT sum(value)*-1 as EBIT
+                    FROM account_details
+                    WHERE 
+                        company_id = {company_id} AND
+                        account_number SIMILAR TO '60%|61%|62%|63%|64%|70%|71%|72%|73%|74%' AND
+                        period_id = {period_id};
+                    """
+    # return ebitda + afschrijvingen
+    return sql
 
 
 def bereken_netto_financiele_schuld(company_id: int, date: str):
     """
-    Berekent de netto financiele schuld van een bedrijf
+    Deze tool geeft de SQL-query terug om de netto financiele schuld te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -418,15 +512,39 @@ def bereken_netto_financiele_schuld(company_id: int, date: str):
     Details:
     De netto financiele schuld geeft het vermogen van de groep weer om de schulden terug te betalen op basis van de kasstromen gegenereerd door de bedrijfsactiviteiten
     """
-    schulden = bereken_financiele_schulden(company_id, date)
-    liquide = bereken_liquide_middelen(company_id, date)
-    return schulden - liquide
+    # schulden = bereken_financiele_schulden(company_id, date)
+    # liquide = bereken_liquide_middelen(company_id, date)
+    # return schulden - liquide
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            period_id = get_period_ids(cursor, company_id, date)
+    sql = f"""
+                WITH financiele_schuld as (SELECT company_id, sum(value)*-1 as schuld_value
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '16%|17%|42%|43%' AND
+                    period_id = {period_id}
+                GROUP BY company_id
+),
+            liquide_middelen as (SELECT company_id, sum(value)*-1 as liquid_value
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '50%|51%|52%|53%|54%|55%|56%|57%|58%' AND
+                    period_id = {period_id}
+                GROUP BY company_id
+)
+                SELECT schuld_value - liquid_value as financiele_schuld
+                FROM financiele_schuld as f join liquide_middelen as l on f.company_id = l.company_id
+                    ;
+            """
+    return sql
 
 
 def bereken_handelsvorderingen(company_id: int, date: str):
     """
-    Berekent het handelsvorderingen van een bedrijf
-
+    Deze tool geeft de SQL-query terug om de handelvorderingen van een bedrijf te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Vereiste:
         - De company_id van het bedrijf
         - date (str): eind datum van de gezochte periode in YYYY-MM-DD formaat
@@ -442,17 +560,25 @@ def bereken_handelsvorderingen(company_id: int, date: str):
             period_id = get_period_ids(cursor, company_id, date)
             if isinstance(period_id, str):  # If the result is the error message
                 return period_id
-            additives = get_acount_details_by_account_number(
-                cursor, company_id, period_id, [40]
-            )
+            # additives = get_acount_details_by_account_number(
+            #     cursor, company_id, period_id, [40]
+            # )
 
-            result = sum([float(record[0]) for record in additives])
-            return result
+            # result = sum([float(record[0]) for record in additives])
+            # return result
+            sql = f"""SELECT sum(value)*-1 as handelsvordering
+                FROM account_details
+                WHERE 
+                    company_id = {company_id} AND
+                    account_number SIMILAR TO '40%' AND
+                    period_id = {period_id};
+                """
+            return sql
 
 
 def bereken_dso(company_id: int, date: str):
     """
-    Berekent de Days Sales Outstanding (DSO) van een bedrijf
+    Deze tool geeft de SQL-query terug om de Day Sales Outstanding (DSO) te berekenen. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
 
     Vereiste:
         - De company_id van het bedrijf
@@ -464,36 +590,39 @@ def bereken_dso(company_id: int, date: str):
     Details:
     De DSO geeft aan hoeveel dagen het gemiddeld duurt voordat een factuur betaald is nadat jouw bedrijf een product of dienst heeft geleverd
     """
-    handelsvorderingen = bereken_handelsvorderingen(company_id, date)
-    omzet = bereken_omzet(company_id, date)
-    if isinstance(handelsvorderingen, str):  # If the result is the error message
-        return handelsvorderingen
-    if isinstance(omzet, str):
-        return omzet
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            date = timezone.datetime.fromisoformat(date)
-            period_ids_query = f"""
-            SELECT end_date, fiscal_year_start
-            FROM periods
-            WHERE company_id = {company_id}
-            AND (
-                end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year}
-                OR
-                end_date = (
-                    SELECT MAX(end_date)
-                    FROM periods AS p2
-                    WHERE p2.company_id = periods.company_id
-                    AND DATE_PART('year', p2.end_date) = DATE_PART('year', periods.end_date)
-                    AND DATE_PART('year', fiscal_year_end) = {date.year}
-                )
-            );
-            """
-            cursor.execute(period_ids_query)
-            dates = cursor.fetchall()
-            date_1 = timezone.datetime.strptime(str(dates[0][0]), "%Y-%m-%d").date()
-            date_2 = timezone.datetime.strptime(str(dates[0][1]), "%Y-%m-%d").date()
-            days = date_1 - date_2
-    if omzet == 0:
-        return "De omzet is nul dus kan dit niet berekend worden"
-    return (handelsvorderingen / omzet) * days * -1
+            period_id = get_period_ids(cursor, company_id, date)
+            if isinstance(period_id, str):  # If the result is the error message
+                return period_id
+            
+    sql = f"""WITH 
+    value_40 AS (
+        SELECT c.company_id, c.name, COALESCE(SUM(ad.value), 0) AS total_value_40
+        FROM companies c
+        JOIN account_details ad ON c.company_id = ad.company_id
+        WHERE ad.account_number SIMILAR TO '40%' 
+          AND ad.company_id = {company_id} 
+          AND ad.period_id = {period_id}
+        GROUP BY c.company_id, c.name
+    ),
+    value_70 AS (
+        SELECT c.company_id, COALESCE(SUM(ad.value), 0) AS total_value_70
+        FROM companies c
+        JOIN account_details ad ON c.company_id = ad.company_id
+        WHERE ad.account_number SIMILAR TO '70%' 
+          AND ad.company_id = {company_id} 
+          AND ad.period_id = {period_id}
+        GROUP BY c.company_id
+    )
+SELECT 
+    v40.name, 
+    CASE 
+        WHEN v70.total_value_70 <> 0 THEN abs(v40.total_value_40 / v70.total_value_70) * 365
+        ELSE NULL 
+    END AS result_ratio
+FROM value_40 v40
+JOIN value_70 v70 ON v40.company_id = v70.company_id;
+
+                """
+    return sql

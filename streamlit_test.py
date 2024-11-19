@@ -12,7 +12,7 @@ from llama_index.agent.openai import OpenAIAgent
 from llama_index.core import VectorStoreIndex
 from llama_index.core.tools import FunctionTool, QueryEngineTool
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
-from bot_queries.queries import group_ebitda, voorafbetaling
+from bot_queries.queries import voorafbetaling
 import pandas as pd
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
@@ -28,10 +28,7 @@ from tools import (
     add,
     companies_ids_api_call,
     company_api_call,
-    describe_tables,
     has_tax_decreased_api_call,
-    list_tables,
-    load_data,
     multiply,
     period_api_call,
     period_id_fetcher,
@@ -124,7 +121,9 @@ Je bent een vertrouwde financiële expert in België die het personeel van het b
 
 - Het is goed om te weten dat dossiers en bedrijven hetzelfde worden gezien in de database functies. Dus als iemand vraagt achter een dossier met een naam dan gaat het eigenlijk over een bedrijf. Een dossier is een company in de database
 
-"""
+- Voer een calculatie altijd uit als het gevraagd is. 
+
+- Zeg nooit, "Ik ga dit uitrekenen" zonder het ook echt te doen"""
 
 
 llm = OpenAI(model="gpt-4o", temperature=0, system_prompt=system_prompt)
@@ -153,44 +152,6 @@ budget_tool = QueryEngineTool.from_defaults(
     name="Financiele_informatie",
     description=description,
 )
-
-
-# @st.cache_resource
-# def load_tools():
-#     multiply_tool = FunctionTool.from_defaults(fn=multiply)
-#     add_tool = FunctionTool.from_defaults(fn=add)
-#     company_tool = FunctionTool.from_defaults(fn=company_api_call)
-#     companies_tool = FunctionTool.from_defaults(fn=companies_ids_api_call)
-#     tarief_tax_tool = FunctionTool.from_defaults(fn=has_tax_decreased_api_call)
-#     period_tool = FunctionTool.from_defaults(fn=period_id_fetcher)
-#     account_tool = FunctionTool.from_defaults(fn=account_details)
-#     reconciliation_tool = FunctionTool.from_defaults(fn=reconciliation_api_call)
-#     list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
-#     describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
-#     load_data_tool = FunctionTool.from_defaults(fn=load_data)
-#     vergelijk_op_basis_van_tool = FunctionTool.from_defaults(vergelijk_op_basis_van)
-#     bereken_tool = FunctionTool.from_defaults(bereken)
-#     get_datum_tool = FunctionTool.from_defaults(get_date)
-
-#     return [
-#         reconciliation_tool,
-#         budget_tool,
-#         tarief_tax_tool,
-#         companies_tool,
-#         account_tool,
-#         period_tool,
-#         company_tool,
-#         # EBITDA_tool,
-#         list_tables_tool,
-#         describe_tables_tool,
-#         load_data_tool,
-#         # balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
-#         # voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
-#         bereken_tool,
-#         vergelijk_op_basis_van_tool,
-#         get_datum_tool,
-#     ]
-
 
 from utils import (
     get_db_connection,
@@ -247,6 +208,46 @@ def load_data(sql_query: str):
             st.session_state.data.columns =[ x[0] for x in cursor.description ]
             return "Het volgende is een preview van data, de user krijgt de hele data te zien. Jij, de chatbot krijgt een deel omdat er anders het risico is om jou context window te overflowen. Vermeld in je antwoord dat jij een preview hebt van de data en de volledige data rechts van de chat te vinden is!" +  str(full_df.head(1))
 
+@st.cache_resource
+def load_tools():
+    multiply_tool = FunctionTool.from_defaults(fn=multiply)
+    add_tool = FunctionTool.from_defaults(fn=add)
+    company_tool = FunctionTool.from_defaults(fn=company_api_call)
+    companies_tool = FunctionTool.from_defaults(fn=companies_ids_api_call)
+    tarief_tax_tool = FunctionTool.from_defaults(fn=has_tax_decreased_api_call)
+    period_tool = FunctionTool.from_defaults(fn=period_id_fetcher)
+    # account_tool = FunctionTool.from_defaults(fn=account_details)
+    reconciliation_tool = FunctionTool.from_defaults(fn=reconciliation_api_call)
+    list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
+    describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
+    load_data_tool = FunctionTool.from_defaults(fn=load_data)
+    vergelijk_op_basis_van_tool = FunctionTool.from_defaults(vergelijk_op_basis_van)
+    bereken_tool = FunctionTool.from_defaults(bereken)
+    get_datum_tool = FunctionTool.from_defaults(get_date)
+    voorafbetaling_tool = FunctionTool.from_defaults(fn=voorafbetaling)
+
+
+    return [
+        budget_tool,
+        tarief_tax_tool,
+        companies_tool,
+        period_tool,
+        company_tool,
+        # EBITDA_tool,
+        # list_tables_tool,
+        # describe_tables_tool,
+        load_data_tool,
+        # balanstotaal_tool, eigen_vermogen_tool, handelswerkkapitaal_tool, bruto_marge_tool, omzet_tool, handelsvorderingen_tool, DSO_tool,
+        # voorzieningen_tool, financiele_schuld_tool, liquide_middelen_tool, EBITDA_marge_tool, afschrijvingen_tool, EBIT_tool, netto_financiele_schuld_tool
+        bereken_tool,
+        vergelijk_op_basis_van_tool,
+        get_datum_tool,
+        voorafbetaling_tool
+    ]
+
+
+
+
 # def chart():
 #     """Creates a chart based on the data. Use this tool when a user requests a chart"""
 #     st.session_state.agent = True
@@ -257,7 +258,6 @@ def load_data(sql_query: str):
 list_tables_tool = FunctionTool.from_defaults(fn=list_tables)
 describe_tables_tool = FunctionTool.from_defaults(fn=describe_tables)
 load_data_tool = FunctionTool.from_defaults(fn=load_data)
-group_ebitda_tool = FunctionTool.from_defaults(fn=group_ebitda)
 voorafbetaling_tool = FunctionTool.from_defaults(fn=voorafbetaling)
 # chart_tool = FunctionTool.from_defaults(fn=chart)
 
@@ -265,7 +265,7 @@ def create_agent():
     llm = OpenAI(model="gpt-4o", temperature=0)
     buffer = ChatMemoryBuffer(token_limit=300)
     agent = OpenAIAgent.from_tools(
-        [list_tables_tool, describe_tables_tool, load_data_tool, group_ebitda_tool, budget_tool, voorafbetaling_tool ], verbose=True, llm=llm, system_prompt=system_prompt, memory_cls=buffer
+        load_tools(), verbose=True, llm=llm, system_prompt=system_prompt, memory_cls=buffer
     )
     return agent
 
