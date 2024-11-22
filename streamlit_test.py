@@ -2,7 +2,7 @@ import json
 import os
 import time
 from uuid import uuid4
-
+import re
 import pandas as pd
 import streamlit as st
 import streamlit_analytics2
@@ -52,14 +52,14 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 import yaml
 from yaml.loader import SafeLoader
 
-with open("credentials.yaml") as file:
-    config = yaml.load(file, Loader=SafeLoader)
-authenticator = stauth.Authenticate(
-    config["credentials"],
-    config["cookie"]["name"],
-    config["cookie"]["key"],
-    config["cookie"]["expiry_days"],
-)
+# with open("credentials.yaml") as file:
+#     config = yaml.load(file, Loader=SafeLoader)
+# authenticator = stauth.Authenticate(
+#     config["credentials"],
+#     config["cookie"]["name"],
+#     config["cookie"]["key"],
+#     config["cookie"]["expiry_days"],
+# )
 
 # Vector DB Setup
 cloud_host = st.secrets["db_host"]
@@ -85,6 +85,7 @@ def create_db_connection():
 
 
 cloud_aws_vector_store = create_db_connection()
+email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
 
 @st.cache_resource
@@ -295,25 +296,50 @@ email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 if st.session_state.get("UUID") is None:
     st.session_state["UUID"] = uuid4().hex
 
-if (
-    st.session_state["authentication_status"] is None
-    or st.session_state["authentication_status"] is False
-):
+# if (
+#     st.session_state["authentication_status"] is None
+#     or st.session_state["authentication_status"] is False
+# ):
+#     st.title("Welkom bij het Knowledge Center!")
+#     try:
+#         authenticator.login()
+#     except stauth.LoginError as e:
+#         st.error(e)
+
+#     if st.session_state["authentication_status"]:
+#         st.session_state["active_section"] = "Chatbot"
+
+#     elif st.session_state["authentication_status"] is False:
+#         st.error("Username/password is incorrect")
+#     elif st.session_state["authentication_status"] is None:
+#         st.warning("Please enter your username and password")
+#         st.session_state["active_section"] = "Username"
+
+if "username" not in st.session_state or "active_session" in st.session_state and st.session_state.active_session == "Username":
     st.title("Welkom bij het Knowledge Center!")
-    try:
-        authenticator.login()
-    except stauth.LoginError as e:
-        st.error(e)
+    with st.form("username_form"):
+        
+        username = st.text_input("Geef hier uw emailadres in om de applicatie te kunnen gebruiken", placeholder="Emailadres")
+        
+        # Form submission button
+        submit_button = st.form_submit_button("Log in")
 
-    if st.session_state["authentication_status"]:
-        st.session_state["active_section"] = "Chatbot"
+        # Check if the form is submitted
+        if submit_button:
+            if re.match(email_regex, username):
+                if username:
+                    # Set the username as username in session state
+                    st.session_state['username'] = username
+                    st.session_state["active_section"] = "Chatbot"
+                    st.success(f"Succesvol ingelogd")
 
-    elif st.session_state["authentication_status"] is False:
-        st.error("Username/password is incorrect")
-    elif st.session_state["authentication_status"] is None:
-        st.warning("Please enter your username and password")
-        st.session_state["active_section"] = "Username"
-
+                    st.rerun()
+                else:
+                    st.error("Ongeldig emailadres. Vul aub een geldig emailadres in.")
+                
+                
+            else:
+                st.error("Vul aub een emailadres in.")
 
 col1, col2, col3 = st.sidebar.columns([1, 6, 1])
 col2.image("images/blauw_logo_and_text_zonder_padding.png")
@@ -344,10 +370,10 @@ with st.sidebar.container():
     uitloggen = st.button("Log Uit", use_container_width=True, on_click=popup)
 
 
-if st.secrets["PROD"] == "False" and "user_name" in st.session_state:
-    if os.path.exists(f"analytics/{st.session_state.user_name}.json"):
+if st.secrets["PROD"] == "False" and "username" in st.session_state:
+    if os.path.exists(f"analytics/{st.session_state.username}.json"):
         streamlit_analytics2.start_tracking(
-            load_from_json=f"analytics/{st.session_state.user_name}.json"
+            load_from_json=f"analytics/{st.session_state.username}.json"
         )
     else:
         streamlit_analytics2.main.reset_counts()
@@ -362,8 +388,7 @@ if (
     chatbot_button
     and "username" in st.session_state
     and st.session_state.username is not None
-    or st.session_state.active_section == "Username"
-    and st.session_state.username is not None
+
 ):
     st.session_state["active_section"] = "Chatbot"
 
@@ -580,19 +605,25 @@ elif st.session_state["active_section"] == "Rapporten":
 
 elif st.session_state["active_section"] == "Uitloggen":
     st.title("Welkom bij het Knowledge Center!")
-    try:
-        authenticator.login()
-    except stauth.LoginError as e:
-        st.error(e)
+    log_out = st.button("Log uit")
+    if "username" in st.session_state and log_out:
+        st.session_state.pop("username")
+        st.toast("U bent uitgelogd")
+        st.session_state.active_section = "Username"
+        st.rerun()
+    # try:
+    #     authenticator.login()
+    # except stauth.LoginError as e:
+    #     st.error(e)
 
-    if st.session_state["authentication_status"]:
-        authenticator.logout()
+    # if st.session_state["authentication_status"]:
+    #     authenticator.logout()
 
-    elif st.session_state["authentication_status"] is False:
-        st.error("Username/password is incorrect")
-    elif st.session_state["authentication_status"] is None:
-        st.warning("Please enter your username and password")
-        st.session_state["active_section"] = "Username"
+    # elif st.session_state["authentication_status"] is False:
+    #     st.error("Username/password is incorrect")
+    # elif st.session_state["authentication_status"] is None:
+    #     st.warning("Please enter your username and password")
+    #     st.session_state["active_section"] = "Username"
 
 
 if (
@@ -601,12 +632,12 @@ if (
     and "UUID" in st.session_state
 ):
     streamlit_analytics2.stop_tracking(
-        save_to_json=f"analytics/{st.session_state.email}.json",
+        save_to_json=f"analytics/{st.session_state.username}.json",
         unsafe_password=st.secrets["ANALYTICS_PWD"],
     )
-    doc_ref = db.collection("users").document(str(st.session_state.email))
+    doc_ref = db.collection("users").document(str(st.session_state.username))
 
-    analytics_data = pd.read_json(f"analytics/{st.session_state.email}.json").to_dict()
+    analytics_data = pd.read_json(f"analytics/{st.session_state.username}.json").to_dict()
     analytics_data["chat"] = {
         st.session_state.get("UUID"): st.session_state.get("messages")
     }
