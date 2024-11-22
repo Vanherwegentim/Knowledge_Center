@@ -49,8 +49,8 @@ COLLECTION_NAME = "openai_vectors"  # Milvus collection name
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Authentication
-import yaml
-from yaml.loader import SafeLoader
+# import yaml
+# from yaml.loader import SafeLoader
 
 # with open("credentials.yaml") as file:
 #     config = yaml.load(file, Loader=SafeLoader)
@@ -431,7 +431,7 @@ if (
 if st.session_state["active_section"] == "Chatbot":
     st.title("Knowledge Center")
     col1, col2 = st.columns([1,1])
-    col2.dataframe(st.session_state.data, use_container_width=True, height=500)
+    # col2.dataframe(st.session_state.data, use_container_width=True, height=500)
     # if "chart"  in st.session_state:
     #     col2.line_chart(st.session_state.data)
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -446,24 +446,31 @@ if st.session_state["active_section"] == "Chatbot":
                 "content": "Hallo, hoe kan ik je helpen? Stel mij al je financiële vragen!",
             }
         ]
-    colcon1 = col1.container(height=500)
+    # colcon1 = col1.container(height=500)
     for message in st.session_state.messages:
         if message["role"] != "system":
             if message["role"] == "assistant":
-                with colcon1.chat_message(message["role"], avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                # with colcon1.chat_message(message["role"], avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                with st.chat_message(message["role"], avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
                     st.markdown(message["content"])
             else:
-                with colcon1.chat_message(message["role"]):
+                # with colcon1.chat_message(message["role"]):
+                with st.chat_message(message["role"]):
                     st.markdown(message["content"])
     try:
         prompt = st.chat_input("Stel hier je vraag!", key="real_chat_input")
         if prompt:
             st.session_state.messages.append({"role": "user", "content": prompt})
-            with col1.container():
-                with colcon1.chat_message("user"):
+            with st.container():
+            # with col1.container():
+                # with colcon1.chat_message("user"):
+                with st.chat_message("user"):
                     st.markdown(prompt)
-            with col1.container():
-                with colcon1.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+            # with col1.container():
+            with st.container():
+                # with colcon1.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                with st.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+
                     with st.spinner("Thinking..."):
                         try:
                             mess = agent.stream_chat(prompt)
@@ -478,8 +485,9 @@ if st.session_state["active_section"] == "Chatbot":
                     time.sleep(0.5)
                     st.rerun()
             if st.session_state.messages[-1]["role"] == "user":
-                with colcon1.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
-                    with colcon1.spinner("Thinking..."):
+                # with colcon1.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                with st.chat_message("assistant", avatar="images/FINTRAX_EMBLEM_POS@2x_TRANSPARENT.png"):
+                    with st.spinner("Thinking..."):
                         try:
                             mess = agent.stream_chat(
                                 st.session_state.messages[-1]["content"]
@@ -635,7 +643,7 @@ if (
         save_to_json=f"analytics/{st.session_state.username}.json",
         unsafe_password=st.secrets["ANALYTICS_PWD"],
     )
-    doc_ref = db.collection("users").document(str(st.session_state.username))
+    doc_ref = db.collection("new_users").document(str(st.session_state.username))
 
     analytics_data = pd.read_json(f"analytics/{st.session_state.username}.json").to_dict()
     analytics_data["chat"] = {
