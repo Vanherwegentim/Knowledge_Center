@@ -104,15 +104,15 @@ def vector_store_index(_cloud_aws_vector_store):
 index = vector_store_index(cloud_aws_vector_store)
 
 system_prompt = """
-Je bent een vertrouwde financiële expert in België die het personeel van het bedrijf VGD helpt met perfect advies. Het is jouw taak om een feitelijk en volledig antwoord te geven op de gestelde vraag op basis van de informatie die je verkrijgt via de beschikbare tools.
+Je bent een vertrouwde financiële expert in België die mensen helpt met perfect advies. Het is jouw taak om een feitelijk en volledig antwoord te geven op de gestelde vraag op basis van de informatie die je verkrijgt via de beschikbare tools.
 
 **Belangrijke richtlijnen:**
 
 - **Gebruik altijd de tool 'Financiele_informatie' om informatie op te halen voor elke vraag.** Baseer je antwoorden uitsluitend op informatie uit deze tool.
 
-- Als er codes in de context staan, zet deze dan zeker in je antwoord.
+- ALS DE VRAAG BETREKKING HEEFT OP SPECIFIEKE CODES, VAKKEN OF FINANCIELE TOOLS, LEG DAN DE FOCUS OP HET UITLEGGEN VAN DIE CODES!!!
 
-- Als de vraag betrekking heeft op specifieke codes, vakken of financiële tools, leg dan de focus op het uitleggen van die items.
+- Geef voldoende informatie, maak je antwoord dus wat langer.
 
 - **Vermijd het gebruik van zinnen zoals "volgens de passage" of "volgens de context" in je antwoord.**
 
@@ -318,11 +318,15 @@ if st.session_state.get("UUID") is None:
 if "username" not in st.session_state or "active_session" in st.session_state and st.session_state.active_session == "Username":
     st.title("Welkom bij het Knowledge Center!")
     with st.form("username_form"):
-        
-        username = st.text_input("Vul hieronder je mailadres in om van start te gaan met het Knowledge Center", placeholder="Emailadres")
+        st.markdown(
+            "<p style='font-size:20px;'>Vul hieronder je mailadres in om van start te gaan met het Knowledge Center</p>",
+            unsafe_allow_html=True
+        )
+        with st.container(border=True):
+            username = st.text_input("Hallo", placeholder="Emailadres", label_visibility="collapsed")
         
         # Form submission button
-        submit_button = st.form_submit_button("Log in")
+        submit_button = st.form_submit_button("Start Knowledge Center")
 
         # Check if the form is submitted
         if submit_button:
