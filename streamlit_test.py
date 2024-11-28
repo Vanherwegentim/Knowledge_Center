@@ -319,7 +319,7 @@ if "username" not in st.session_state or "active_session" in st.session_state an
     st.title("Welkom bij het Knowledge Center!")
     with st.form("username_form"):
         
-        username = st.text_input("Geef hier uw emailadres in om de applicatie te kunnen gebruiken", placeholder="Emailadres")
+        username = st.text_input("Vul hieronder je mailadres in om van start te gaan met het Knowledge Center", placeholder="Emailadres")
         
         # Form submission button
         submit_button = st.form_submit_button("Log in")
