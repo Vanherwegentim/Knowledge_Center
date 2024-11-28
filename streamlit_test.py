@@ -316,10 +316,10 @@ if st.session_state.get("UUID") is None:
 #         st.session_state["active_section"] = "Username"
 
 if "username" not in st.session_state or "active_session" in st.session_state and st.session_state.active_session == "Username":
-    st.title("Welkom bij het Knowledge Center!")
+    st.title("Welkom bij het Knowledge Center! 🎉")
     with st.form("username_form"):
         st.markdown(
-            "<p style='font-size:20px;'>Vul hieronder je mailadres in om van start te gaan met het Knowledge Center</p>",
+            "<p style='font-size:20px;'>Vul hieronder je mailadres in om van start te gaan met het Knowledge Center  </p>",
             unsafe_allow_html=True
         )
         with st.container(border=True):
