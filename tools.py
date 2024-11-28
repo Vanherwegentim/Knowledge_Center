@@ -193,7 +193,6 @@ def has_tax_decreased_api_call(company_id: int, date: str):
 def get_date():
     """
     A function to return todays date.
-    Call this before any other functions if you are unaware of the current date
     """
     return datetime.date.today()
 

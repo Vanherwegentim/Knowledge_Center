@@ -60,13 +60,13 @@ def load_data(sql_query: str):
 
 def bereken(what: str, company_id: int, date: str):
     """
-    Voert een specifieke berekening uit voor een bedrijf in een bepaalde periode.
+    Geeft de SQL-query terug om het gevraagde uit te rekenen voor een bedrijf in een bepaalde periode. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
     Args:
         what (str): Het type berekening (EBITDA, verlies, balanstotaal, eigen vermogen, voorzieningen, handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
         company_id (int): De ID van het bedrijf. Gebruik de period_tool om de ID te verkrijgen als je alleen de bedrijfsnaam hebt.
         date (str): Einddatum van de periode in "YYYY-MM-DD" formaat.
     Returns:
-        float: Het resultaat van de berekening.
+        string: De SQL-query als string
     Foutafhandeling:
         Geeft een foutbericht als het gevraagde type berekening niet wordt ondersteund.
     """
@@ -80,21 +80,24 @@ def bereken(what: str, company_id: int, date: str):
 
 
 def vergelijk_op_basis_van(
-    what: str, date: str, limit: int = 10, order_by: str = "DESC"
+    what: str, date: str, limit: int, order_by: str = "DESC"
 ):
     """
-    Geeft de gevraagde hoeveelheid bedrijven terug gesorteerd op ASC or DESC voor een bepaalde periode
-    Vereiste:
-        - what (str): Het soort berekening dat gemaakt moet worden. Map indien mogelijk naar een van volgende woorden (EBITDA, verlies, balanstotaal, eigen vermogen, voorzieningen,
-            handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
+    Geeft de SQL-query terug om een hoeveelheid bedrijven terug te krijgen gesorteerd op ASC of DESC voor een bepaalde periode op basis van het gevraagde. GEBRUIK DE LOAD_DATA TOOL OM DE TERUGGEGEVEN SQL UIT TE VOEREN!!!!
+    Args:
+        what (str): Het type berekening (ebitda, verlies, balanstotaal, eigen vermogen, voorzieningen, handelswerkkapitaal, financiele schulden, liquide middelen, bruto marge, omzet, EBITDA marge, afschrijvingen, netto financiele schuld, handelsvorderingen, dso)
+        date (str): Einddatum van de periode in "YYYY-MM-DD" formaat.
+        limit (int): De hoeveelheid bedrijven die je terug wilt.
+        order_by (str): Dit kan ASC of DESC zijn afhankelijk van hoe je het gesorteerd wilt.
+    Returns:
+        string: De SQL-query als string
+    Foutafhandeling:
+        Geeft een foutbericht als het gevraagde type berekening niet wordt ondersteund.
     """
     date = timezone.datetime.fromisoformat(date)
-    if limit > 100:
-        return (
-            "Dit is een te groot aantal bedrijven. Kies aub een kleinere hoeveelheid."
-        )
+    
     match what:
-        case "EBITDA":
+        case "ebitda":
             sql = f"""WITH latest_period AS (
                             SELECT period_id, company_id,
                                             ROW_NUMBER() OVER (
@@ -577,7 +580,7 @@ def vergelijk_op_basis_van(
                 LIMIT {limit};
                 """
 
-    return load_data(sql)
+    return sql
 
 
 
