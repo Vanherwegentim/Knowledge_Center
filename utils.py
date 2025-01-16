@@ -26,11 +26,12 @@ def get_period_ids(cursor: cursor, company_id: int, date: str):
                 end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year}
                 OR
                 end_date = (
-                    SELECT MAX(end_date)
+                    SELECT p2.end_date
                     FROM periods AS p2
                     WHERE p2.company_id = periods.company_id
-                    AND DATE_PART('year', p2.end_date) = DATE_PART('year', periods.end_date)
-                    AND DATE_PART('year', fiscal_year_end) = {date.year}
+                    AND DATE_PART('year', p2.end_date) = {date.year}
+                    ORDER BY ABS(p2.end_date - DATE '{date}') ASC
+                    LIMIT 1
                 )
             );
         """

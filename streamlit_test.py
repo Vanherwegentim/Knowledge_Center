@@ -149,7 +149,7 @@ Gebruik deze tool altijd om:
 """
 
 
-query_engine = index.as_query_engine(llm=llm)
+query_engine = index.as_query_engine(llm=llm, similarity_top_k=10)
 budget_tool = QueryEngineTool.from_defaults(
     query_engine,
     name="Financiele_informatie",

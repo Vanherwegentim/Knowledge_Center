@@ -1,6 +1,6 @@
 openai
 pymilvus
-streamlit-analytics2
+streamlit-analytics2==0.8.2
 google-cloud-firestore
 streamlit_authenticator
 PyYAML

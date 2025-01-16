@@ -96,26 +96,28 @@ def vergelijk_op_basis_van(
     match what:
         case "EBITDA":
             sql = f"""WITH latest_period AS (
-                            SELECT period_id, company_id,
-                                            ROW_NUMBER() OVER (
-                                                PARTITION BY company_id 
-                                                ORDER BY 
-                                                    (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = {date.year} THEN 1 ELSE 2 END),
-                                                    end_date DESC
-                                            ) AS rn
-                                        FROM periods
-                                        WHERE DATE_PART('year', end_date) = {date.year}
-                                    )
+                                SELECT period_id, company_id,
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY company_id
+                                        ORDER BY 
+                                            (CASE WHEN end_date = fiscal_year_end AND DATE_PART('year', fiscal_year_end) = EXTRACT(YEAR FROM DATE '{date}') THEN 1 ELSE 2 END),
+                                            ABS(end_date - DATE '{date}') ASC
+                                    ) AS rn
+                                FROM periods
+                                WHERE DATE_PART('year', end_date) = EXTRACT(YEAR FROM DATE '{date}')
+                            )
 
-                                    SELECT c.company_id, c.name, SUM(ad.value) AS total_value
-                                    FROM companies c
-                                    JOIN account_details ad ON c.company_id = ad.company_id
-                                    JOIN periods p ON ad.period_id = p.period_id
-                                    JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id AND lp.rn = 1
-                                    WHERE ad.account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%'
-                                    GROUP BY c.company_id, c.name
-                                    ORDER BY total_value {order_by}
-                                    LIMIT {limit};
+                            SELECT c.company_id, c.name, SUM(ad.value) AS total_value
+                            FROM companies c
+                            JOIN account_details ad ON c.company_id = ad.company_id
+                            JOIN periods p ON ad.period_id = p.period_id
+                            JOIN latest_period lp ON lp.company_id = c.company_id AND ad.period_id = lp.period_id
+                            WHERE lp.rn = 1
+                            AND ad.account_number SIMILAR TO '60%|61%|62%|64%|70%|71%|72%|73%|74%'
+                            GROUP BY c.company_id, c.name
+                            ORDER BY total_value {order_by}
+                            LIMIT {limit};
+
                                     """
         case "verlies":
             sql = f"""WITH latest_period AS (
